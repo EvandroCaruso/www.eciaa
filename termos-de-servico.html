@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Termos de Serviço — ECIAA</title>
+  <meta name="description" content="Termos de Serviço da ECIAA. Condições gerais de uso dos serviços, aplicativos e integrações da ECIAA." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://eciaa.com.br/termos-de-servico.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060608;
+      --surface: #0d0d12;
+      --border: rgba(255,255,255,0.07);
+      --accent: #c084fc;
+      --accent2: #7c3aed;
+      --text: #e8e8f0;
+      --muted: #5a5a72;
+      --font-display: 'Syne', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-display);
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(192,132,252,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(192,132,252,0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    nav {
+      position: sticky; top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.5rem 4rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(6,6,8,0.8);
+      backdrop-filter: blur(20px);
+    }
+    .logo {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      letter-spacing: 0.2em;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .logo span { color: var(--accent); }
+    nav .back {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    nav .back:hover { color: var(--accent); }
+
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 6rem 2rem 6rem;
+    }
+    .page-tag {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .page-tag::before {
+      content: '';
+      display: block;
+      width: 40px; height: 1px;
+      background: var(--accent);
+    }
+    h1 {
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+    }
+    h1 span { color: var(--accent); }
+    .updated {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      margin-bottom: 3rem;
+    }
+    h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-top: 3rem;
+      margin-bottom: 1.2rem;
+      color: var(--text);
+    }
+    h2::before {
+      content: '◇ ';
+      color: var(--accent);
+      font-size: 0.9em;
+    }
+    p, li {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: var(--text);
+      line-height: 1.9;
+      margin-bottom: 1rem;
+    }
+    ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+    li { margin-bottom: 0.5rem; }
+    strong { color: var(--accent); font-weight: 500; }
+    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(192,132,252,0.3); }
+    a:hover { border-bottom-color: var(--accent); }
+
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 3rem 4rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+    .footer-logo {
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+    }
+    .footer-logo span { color: var(--accent); }
+    .footer-copy {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+    .footer-links { display: flex; gap: 2rem; flex-wrap: wrap; }
+    .footer-links a {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      border-bottom: none;
+      transition: color 0.3s;
+    }
+    .footer-links a:hover { color: var(--accent); }
+
+    @media (max-width: 900px) {
+      nav { padding: 1.2rem 1.5rem; }
+      main { padding: 4rem 1.5rem; }
+      footer { padding: 2rem 1.5rem; flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/" class="logo">EC<span>I</span>AA</a>
+    <a href="/" class="back">← Voltar</a>
+  </nav>
+
+  <main>
+    <div class="page-tag">Condições Gerais</div>
+    <h1>Termos de <span>Serviço</span></h1>
+    <div class="updated">Última atualização: 13 de maio de 2026</div>
+
+    <p>Estes Termos de Serviço regulam o uso dos serviços, aplicativos, integrações e conteúdos disponibilizados pela <strong>ECIAA</strong> ("ECIAA", "nós") por meio do site <a href="https://eciaa.com.br">eciaa.com.br</a> e dos canais oficiais conectados a plataformas de terceiros (Meta, WhatsApp Business, Chatwoot, entre outros).</p>
+    <p>Ao contratar, acessar ou utilizar qualquer serviço da ECIAA, o usuário ou empresa contratante ("Cliente") concorda integralmente com os termos abaixo.</p>
+
+    <h2>1. Sobre a ECIAA</h2>
+    <p>A ECIAA é uma empresa especializada no desenvolvimento de <strong>ecossistemas de aplicativos baseados em Inteligência Artificial</strong>, oferecendo agentes autônomos, automação de atendimento, qualificação de leads, integração de sistemas e consultoria estratégica orientada a dados.</p>
+
+    <h2>2. Serviços oferecidos</h2>
+    <p>A ECIAA oferece, entre outros:</p>
+    <ul>
+      <li>Arquitetura e desenvolvimento de ecossistemas de apps com IA.</li>
+      <li>Implantação de agentes conversacionais e automação 24/7.</li>
+      <li>Integração com plataformas de mensageria (WhatsApp Business, Chatwoot) e CRMs.</li>
+      <li>Sistemas de qualificação de leads e follow-up automatizado.</li>
+      <li>Consultoria técnica e estratégica em IA aplicada a negócios.</li>
+    </ul>
+
+    <h2>3. Uso aceitável</h2>
+    <p>O Cliente compromete-se a:</p>
+    <ul>
+      <li>Não utilizar os serviços para fins ilícitos, fraudulentos ou que violem direitos de terceiros.</li>
+      <li>Respeitar a <strong>LGPD (Lei nº 13.709/2018)</strong> e a legislação aplicável ao tratar dados de seus próprios usuários.</li>
+      <li>Não realizar engenharia reversa, cópia ou redistribuição não autorizada dos softwares e fluxos entregues pela ECIAA.</li>
+      <li>Cumprir as políticas das plataformas integradas (Meta, WhatsApp Business etc.), incluindo regras antispam e de comunicação.</li>
+    </ul>
+
+    <h2>4. Propriedade intelectual</h2>
+    <p>Todo o conteúdo, código, arquitetura, fluxos de automação, prompts, modelos, marcas e materiais produzidos pela ECIAA são de sua propriedade intelectual exclusiva, salvo previsão expressa em contrato específico com o Cliente. O uso fica autorizado durante a vigência da contratação, nos limites do escopo acordado.</p>
+
+    <h2>5. Confidencialidade e dados</h2>
+    <p>A ECIAA trata as informações compartilhadas pelo Cliente como confidenciais. O tratamento de dados pessoais segue os princípios da LGPD e está descrito em detalhes na nossa <a href="/politica-exclusao-dados.html">Política de Exclusão de Dados</a>.</p>
+
+    <h2>6. Limitação de responsabilidade</h2>
+    <p>A ECIAA atua com diligência técnica, mas <strong>não garante resultados financeiros, comerciais ou operacionais específicos</strong>, uma vez que os mesmos dependem de variáveis externas (mercado, estratégia do Cliente, qualidade da base de leads, etc.).</p>
+    <p>A ECIAA não se responsabiliza por indisponibilidades ou alterações de comportamento de plataformas de terceiros (Meta, WhatsApp, OpenAI, Anthropic, provedores de nuvem, etc.) que estejam fora do seu controle.</p>
+
+    <h2>7. Pagamentos e vigência</h2>
+    <p>Valores, prazos, escopo, condições de pagamento e vigência de cada contratação são definidos em <strong>proposta comercial específica</strong> firmada entre a ECIAA e o Cliente, prevalecendo sobre estes termos no que for específico de cada projeto.</p>
+
+    <h2>8. Suspensão e rescisão</h2>
+    <p>A ECIAA reserva-se o direito de suspender ou encerrar o fornecimento dos serviços em caso de:</p>
+    <ul>
+      <li>Inadimplência por parte do Cliente.</li>
+      <li>Uso indevido ou ilícito da plataforma.</li>
+      <li>Violação destes Termos ou de políticas das plataformas integradas.</li>
+    </ul>
+
+    <h2>9. Alterações destes termos</h2>
+    <p>Estes Termos podem ser atualizados a qualquer momento. A versão vigente será sempre a publicada nesta página, com a data da última atualização no topo.</p>
+
+    <h2>10. Foro e legislação aplicável</h2>
+    <p>Estes Termos são regidos pelas leis da <strong>República Federativa do Brasil</strong>. Fica eleito o foro da comarca do estabelecimento da ECIAA para dirimir qualquer dúvida ou controvérsia, com renúncia a qualquer outro, por mais privilegiado que seja.</p>
+
+    <h2>11. Contato</h2>
+    <p>Dúvidas sobre estes Termos devem ser encaminhadas para <strong>contato@eciaa.com.br</strong>.</p>
+  </main>
+
+  <footer>
+    <div class="footer-logo">EC<span>I</span>AA</div>
+    <div class="footer-copy">© 2026 ECIAA · eciaa.com.br · Todos os direitos reservados</div>
+    <div class="footer-links">
+      <a href="/">Início</a>
+      <a href="/politica-exclusao-dados.html">Exclusão de dados</a>
+      <a href="/termos-de-servico.html">Termos de serviço</a>
+    </div>
+  </footer>
+</body>
+</html>
