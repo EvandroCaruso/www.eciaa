@@ -4,19 +4,102 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ═══════════════════════════════════════════════
-       EDITE ESTAS INFORMAÇÕES PARA CADA NOVO POST
-  ═══════════════════════════════════════════════ -->
-  <title>TÍTULO DO POST — Blog ECIAA</title>
-  <meta name="description" content="DESCRIÇÃO DO POST EM 1-2 FRASES (até 160 caracteres)" />
-  <link rel="canonical" href="https://eciaa.com.br/blog/posts/SLUG-DO-POST.html" />
-  <meta property="og:title" content="TÍTULO DO POST" />
-  <meta property="og:description" content="DESCRIÇÃO CURTA DO POST" />
-  <meta property="og:url" content="https://eciaa.com.br/blog/posts/SLUG-DO-POST.html" />
+  <!-- ═══════════════════════════════════════════════════════════════
+       ⚙️  EDITE ESTE BLOCO PARA CADA NOVA MATÉRIA
+       Regras SEO: title < 60 chars · description 140–160 chars ·
+       SLUG em minúsculas-com-hifens · datas ISO AAAA-MM-DD
+  ═══════════════════════════════════════════════════════════════ -->
+  <title>TÍTULO DA MATÉRIA — Blog ECIAA</title>
+  <meta name="description" content="Descrição da matéria em 1–2 frases, entre 140 e 160 caracteres, com a palavra-chave principal e uma promessa clara de valor." />
+  <meta name="keywords" content="palavra-chave-1, palavra-chave-2, ECIAA" />
+  <meta name="author" content="ECIAA" />
+  <meta name="robots" content="index, follow" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="canonical" href="https://eciaa.com.br/blog/posts/SLUG-DA-MATERIA.html" />
+
+  <!-- Open Graph -->
   <meta property="og:type" content="article" />
-  <meta property="article:published_time" content="2025-01-01" />
+  <meta property="og:site_name" content="ECIAA" />
+  <meta property="og:locale" content="pt_BR" />
+  <meta property="og:title" content="TÍTULO DA MATÉRIA" />
+  <meta property="og:description" content="Descrição curta e persuasiva da matéria (até ~160 caracteres)." />
+  <meta property="og:url" content="https://eciaa.com.br/blog/posts/SLUG-DA-MATERIA.html" />
+  <meta property="og:image" content="https://eciaa.com.br/blog/posts/img/SLUG-DA-MATERIA-og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="article:published_time" content="2026-01-01" />
+  <meta property="article:modified_time" content="2026-01-01" />
   <meta property="article:author" content="ECIAA" />
-  <!-- ═══════════════════════════════════════════════ -->
+  <meta property="article:section" content="CATEGORIA" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="TÍTULO DA MATÉRIA" />
+  <meta name="twitter:description" content="Descrição curta e persuasiva da matéria (até ~160 caracteres)." />
+  <meta name="twitter:image" content="https://eciaa.com.br/blog/posts/img/SLUG-DA-MATERIA-og.png" />
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       JSON-LD — atualize headline, datas, descrição, imagem e o FAQ.
+       Se a matéria NÃO tiver FAQ, remova o bloco @type FAQPage.
+  ═══════════════════════════════════════════════════════════════ -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "TÍTULO DA MATÉRIA",
+    "description": "Descrição curta da matéria.",
+    "image": "https://eciaa.com.br/blog/posts/img/SLUG-DA-MATERIA-og.png",
+    "datePublished": "2026-01-01",
+    "dateModified": "2026-01-01",
+    "author": { "@type": "Organization", "name": "ECIAA", "url": "https://eciaa.com.br" },
+    "publisher": {
+      "@type": "Organization",
+      "name": "ECIAA",
+      "logo": { "@type": "ImageObject", "url": "https://eciaa.com.br/logo.png" }
+    },
+    "mainEntityOfPage": { "@type": "WebPage", "@id": "https://eciaa.com.br/blog/posts/SLUG-DA-MATERIA.html" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Início", "item": "https://eciaa.com.br/" },
+      { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://eciaa.com.br/blog/" },
+      { "@type": "ListItem", "position": 3, "name": "TÍTULO DA MATÉRIA", "item": "https://eciaa.com.br/blog/posts/SLUG-DA-MATERIA.html" }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Pergunta frequente 1?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Resposta objetiva à pergunta 1." }
+      },
+      {
+        "@type": "Question",
+        "name": "Pergunta frequente 2?",
+        "acceptedAnswer": { "@type": "Answer", "text": "Resposta objetiva à pergunta 2." }
+      }
+    ]
+  }
+  </script>
+
+  <!-- Analytics (GA4) — descomente e troque G-XXXXXXXXXX pelo Measurement ID real -->
+  <!--
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+  -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -26,16 +109,20 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg: #060608; --surface: #0d0d12; --border: rgba(255,255,255,0.07);
-      --accent: #00e5ff; --text: #e8e8f0; --muted: #5a5a72;
+      --accent: #c084fc; --accent2: #7c3aed; --text: #e8e8f0; --muted: #5a5a72;
       --font-display: 'Syne', sans-serif; --font-mono: 'DM Mono', monospace;
     }
     html { scroll-behavior: smooth; }
     body { background: var(--bg); color: var(--text); font-family: var(--font-display); }
     body::before {
       content: ''; position: fixed; inset: 0;
-      background-image: linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
+      background-image: linear-gradient(rgba(192,132,252,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(192,132,252,0.025) 1px, transparent 1px);
       background-size: 60px 60px; pointer-events: none; z-index: 0;
     }
+
+    /* Barra de progresso de leitura */
+    .reading-progress { position: fixed; top: 0; left: 0; height: 2px; width: 0; background: var(--accent); z-index: 200; transition: width 0.1s linear; }
+
     nav {
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
@@ -48,57 +135,83 @@
     nav a { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); text-decoration: none; transition: color 0.3s; }
     nav a:hover { color: var(--accent); }
 
-    /* CABEÇALHO DO POST */
-    .post-header { position: relative; z-index: 1; padding: 10rem 4rem 5rem; max-width: 860px; border-bottom: 1px solid var(--border); }
+    .wrap { position: relative; z-index: 1; max-width: 860px; }
+
+    /* Breadcrumb visível */
+    .breadcrumb { max-width: 860px; padding: 8rem 4rem 0; font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.1em; color: var(--muted); position: relative; z-index: 1; }
+    .breadcrumb a { color: var(--muted); text-decoration: none; transition: color 0.3s; }
+    .breadcrumb a:hover { color: var(--accent); }
+    .breadcrumb span { color: var(--accent); }
+
+    /* Cabeçalho da matéria */
+    .post-header { position: relative; z-index: 1; padding: 2rem 4rem 3rem; max-width: 860px; border-bottom: 1px solid var(--border); }
     .back-link { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 2.5rem; transition: color 0.3s; }
     .back-link:hover { color: var(--accent); }
     .post-meta { display: flex; gap: 1.5rem; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; }
     .post-date { font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.15em; color: var(--muted); }
-    .post-cat { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); background: rgba(0,229,255,0.08); padding: 0.2rem 0.8rem; border-radius: 2px; }
+    .post-cat { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); background: rgba(192,132,252,0.08); padding: 0.2rem 0.8rem; border-radius: 2px; }
     .post-read-time { font-family: var(--font-mono); font-size: 0.65rem; color: var(--muted); }
     .post-header h1 { font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 1.5rem; }
     .post-lead { font-family: var(--font-mono); font-size: 1rem; color: var(--muted); line-height: 1.9; }
 
-    /* CONTEÚDO DO POST */
-    .post-content { position: relative; z-index: 1; padding: 5rem 4rem; max-width: 860px; }
-    .post-content h2 { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; margin: 3rem 0 1.2rem; }
+    /* Índice (TOC) */
+    .toc { position: relative; z-index: 1; max-width: 860px; margin: 3rem 4rem 0; border: 1px solid var(--border); background: var(--surface); padding: 1.8rem 2rem; }
+    .toc h4 { font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.2rem; }
+    .toc ol { list-style: none; counter-reset: toc; display: grid; gap: 0.7rem; }
+    .toc li { counter-increment: toc; }
+    .toc a { font-family: var(--font-mono); font-size: 0.82rem; color: var(--muted); text-decoration: none; display: flex; gap: 0.9rem; transition: color 0.3s; }
+    .toc a::before { content: counter(toc, decimal-leading-zero); color: var(--accent); }
+    .toc a:hover, .toc a.active { color: var(--text); }
+
+    /* Conteúdo — seções numeradas */
+    .post-content { position: relative; z-index: 1; padding: 4rem 4rem 2rem; max-width: 860px; counter-reset: sec; }
+    .post-content .sec { padding-top: 2rem; scroll-margin-top: 6rem; }
+    .post-content .sec > h2 { counter-increment: sec; font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; margin: 1rem 0 1.2rem; display: flex; align-items: baseline; gap: 1rem; }
+    .post-content .sec > h2::before { content: counter(sec, decimal-leading-zero); font-family: var(--font-mono); font-size: 0.9rem; color: var(--accent); font-weight: 500; }
     .post-content h3 { font-size: 1.2rem; font-weight: 700; color: var(--accent); margin: 2rem 0 0.8rem; font-family: var(--font-mono); letter-spacing: 0.05em; }
     .post-content p { font-family: var(--font-mono); font-size: 0.9rem; color: var(--muted); line-height: 2; margin-bottom: 1.5rem; }
     .post-content p strong { color: var(--text); font-weight: 500; }
     .post-content ul, .post-content ol { margin: 1.5rem 0 1.5rem 1.5rem; }
     .post-content li { font-family: var(--font-mono); font-size: 0.9rem; color: var(--muted); line-height: 2; margin-bottom: 0.5rem; }
     .post-content li strong { color: var(--text); }
-    .post-content blockquote {
-      border-left: 2px solid var(--accent); padding: 1.2rem 2rem; margin: 2rem 0;
-      background: rgba(0,229,255,0.04); border-radius: 0 4px 4px 0;
-    }
+    .post-content a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(192,132,252,0.3); }
+    .post-content blockquote { border-left: 2px solid var(--accent); padding: 1.2rem 2rem; margin: 2rem 0; background: rgba(192,132,252,0.04); border-radius: 0 4px 4px 0; }
     .post-content blockquote p { color: var(--text); font-size: 1rem; margin: 0; }
-    .metric-highlight {
-      border: 1px solid var(--border); padding: 2rem; margin: 2.5rem 0;
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; background: var(--surface);
-    }
+
+    /* Figuras / ilustrações (SVG inline ou <img>) */
+    figure { margin: 2.5rem 0; }
+    figure svg, figure img { display: block; width: 100%; height: auto; max-width: 100%; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); }
+    figcaption { font-family: var(--font-mono); font-size: 0.68rem; color: var(--muted); text-align: center; margin-top: 0.9rem; letter-spacing: 0.05em; }
+
+    /* Destaque de métricas */
+    .metric-highlight { border: 1px solid var(--border); padding: 2rem; margin: 2.5rem 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; background: var(--surface); }
     .metric-highlight .m-num { font-size: 2rem; font-weight: 800; letter-spacing: -0.04em; color: var(--accent); }
     .metric-highlight .m-label { font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-top: 0.3rem; }
     .divider { border: none; border-top: 1px solid var(--border); margin: 3rem 0; }
 
-    /* CTA FINAL */
-    .post-cta {
-      position: relative; z-index: 1; margin: 0 4rem 6rem;
-      border: 1px solid var(--border); padding: 3rem; max-width: 860px;
-      display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap;
-      background: var(--surface);
-    }
+    /* FAQ (acordeão nativo) */
+    .faq { position: relative; z-index: 1; padding: 2rem 4rem 4rem; max-width: 860px; }
+    .faq h2 { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 1.5rem; }
+    .faq details { border: 1px solid var(--border); border-radius: 4px; margin-bottom: 0.8rem; background: var(--surface); }
+    .faq summary { font-family: var(--font-mono); font-size: 0.9rem; color: var(--text); padding: 1.2rem 1.5rem; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: '+'; color: var(--accent); font-size: 1.2rem; }
+    .faq details[open] summary::after { content: '−'; }
+    .faq details p { font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted); line-height: 1.9; padding: 0 1.5rem 1.4rem; }
+
+    /* CTA final */
+    .post-cta { position: relative; z-index: 1; margin: 0 4rem 6rem; border: 1px solid var(--border); padding: 3rem; max-width: 860px; display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap; background: var(--surface); }
     .post-cta h3 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; }
     .post-cta p { font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
     .btn-cta { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--bg); background: var(--accent); padding: 0.9rem 2rem; border-radius: 2px; text-decoration: none; white-space: nowrap; transition: opacity 0.3s; }
     .btn-cta:hover { opacity: 0.85; }
 
-    /* POSTS RELACIONADOS */
+    /* Matérias relacionadas */
     .related { position: relative; z-index: 1; padding: 0 4rem 6rem; max-width: 860px; }
     .related h4 { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--muted); margin-bottom: 2rem; }
     .related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
     .related-card { border: 1px solid var(--border); padding: 1.5rem; text-decoration: none; color: inherit; transition: border-color 0.3s; display: block; }
-    .related-card:hover { border-color: rgba(0,229,255,0.3); }
+    .related-card:hover { border-color: rgba(192,132,252,0.3); }
     .related-card .r-cat { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.7rem; }
     .related-card .r-title { font-size: 0.95rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.4; }
 
@@ -110,9 +223,10 @@
     @media (max-width: 900px) {
       nav { padding: 1.2rem 2rem; }
       nav ul { display: none; }
-      .post-header, .post-content, .post-cta, .related { padding-left: 2rem; padding-right: 2rem; }
+      .breadcrumb { padding-left: 2rem; padding-right: 2rem; }
+      .post-header, .post-content, .post-cta, .related, .toc, .faq { padding-left: 2rem; padding-right: 2rem; }
+      .toc { margin-left: 2rem; margin-right: 2rem; }
       .post-cta { margin: 0 2rem 4rem; }
-      .related { padding-left: 2rem; padding-right: 2rem; }
       .metric-highlight { grid-template-columns: 1fr 1fr; }
       .related-grid { grid-template-columns: 1fr; }
       footer { flex-direction: column; text-align: center; }
@@ -121,6 +235,8 @@
 </head>
 <body>
 
+  <div class="reading-progress" id="readingProgress"></div>
+
   <nav>
     <a href="../../index.html" class="logo">EC<span>I</span>AA</a>
     <ul>
@@ -128,72 +244,98 @@
       <li><a href="../../index.html#servicos">Serviços</a></li>
       <li><a href="../../index.html#portfolio">Portfólio</a></li>
       <li><a href="../index.html">Blog</a></li>
-      <li><a href="../../index.html#contato" style="color:var(--accent);border:1px solid rgba(0,229,255,0.3);padding:0.5rem 1.2rem;border-radius:2px;">Contato</a></li>
+      <li><a href="../../index.html#contato" style="color:var(--accent);border:1px solid rgba(192,132,252,0.3);padding:0.5rem 1.2rem;border-radius:2px;">Contato</a></li>
     </ul>
   </nav>
 
-  <!-- ═══════════════════════════════════════════════
-       CABEÇALHO DO POST — edite aqui
-  ═══════════════════════════════════════════════ -->
-  <div class="post-header">
+  <!-- Breadcrumb (casa com o BreadcrumbList do JSON-LD) -->
+  <nav class="breadcrumb" aria-label="Trilha de navegação">
+    <a href="../../index.html">Início</a> / <a href="../index.html">Blog</a> / <span>Matéria</span>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CABEÇALHO DA MATÉRIA — edite aqui
+  ═══════════════════════════════════════════════════════════════ -->
+  <header class="post-header">
     <a href="../index.html" class="back-link">← Voltar ao Blog</a>
     <div class="post-meta">
       <span class="post-date">DD Mês AAAA</span>
       <span class="post-cat">CATEGORIA</span>
       <span class="post-read-time">X min de leitura</span>
     </div>
-    <h1>TÍTULO COMPLETO DO POST</h1>
-    <p class="post-lead">Lead do post — uma ou duas frases que resumem o ponto principal e convencem o leitor a continuar.</p>
-  </div>
+    <h1>TÍTULO COMPLETO DA MATÉRIA</h1>
+    <p class="post-lead">Lead da matéria — uma ou duas frases que resumem o ponto principal e convencem o leitor a continuar.</p>
+  </header>
 
-  <!-- ═══════════════════════════════════════════════
-       CONTEÚDO DO POST — escreva abaixo
-  ═══════════════════════════════════════════════ -->
+  <!-- ÍNDICE — um <li> por seção; o href aponta para o id da .sec -->
+  <nav class="toc" aria-label="Índice">
+    <h4>Neste guia</h4>
+    <ol>
+      <li><a href="#s1">Título da primeira seção</a></li>
+      <li><a href="#s2">Título da segunda seção</a></li>
+    </ol>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CONTEÚDO — cada seção é <section class="sec" id="sN"> com um <h2>
+  ═══════════════════════════════════════════════════════════════ -->
   <article class="post-content">
 
-    <h2>Título da primeira seção</h2>
-    <p>Parágrafo de introdução da seção. Use <strong>negrito</strong> para destacar conceitos importantes.</p>
-    <p>Segundo parágrafo da seção.</p>
+    <section class="sec" id="s1">
+      <h2>Título da primeira seção</h2>
+      <p>Parágrafo de introdução da seção. Use <strong>negrito</strong> para destacar conceitos importantes.</p>
 
-    <h3>Subtítulo (use para tópicos dentro da seção)</h3>
-    <p>Conteúdo do subtópico.</p>
+      <h3>Subtítulo (tópico dentro da seção)</h3>
+      <p>Conteúdo do subtópico.</p>
 
-    <!-- Use este bloco para destacar métricas reais -->
-    <div class="metric-highlight">
-      <div>
-        <div class="m-num">00%</div>
-        <div class="m-label">Descrição<br/>da métrica</div>
+      <!-- Ilustração própria: cole o SVG inline dentro de <figure>. alt via <title>/<desc> no SVG + figcaption -->
+      <figure>
+        <svg viewBox="0 0 800 300" role="img" xmlns="http://www.w3.org/2000/svg">
+          <title>Descrição acessível da ilustração</title>
+          <rect width="800" height="300" fill="#0d0d12"/>
+          <text x="400" y="150" fill="#c084fc" font-family="monospace" font-size="16" text-anchor="middle">SVG produzido por nós</text>
+        </svg>
+        <figcaption>Legenda da ilustração.</figcaption>
+      </figure>
+
+      <!-- Bloco de métricas reais -->
+      <div class="metric-highlight">
+        <div><div class="m-num">00%</div><div class="m-label">Descrição<br/>da métrica</div></div>
+        <div><div class="m-num">00x</div><div class="m-label">Descrição<br/>da métrica</div></div>
+        <div><div class="m-num">R$0M</div><div class="m-label">Descrição<br/>da métrica</div></div>
       </div>
-      <div>
-        <div class="m-num">00x</div>
-        <div class="m-label">Descrição<br/>da métrica</div>
-      </div>
-      <div>
-        <div class="m-num">R$0M</div>
-        <div class="m-label">Descrição<br/>da métrica</div>
-      </div>
-    </div>
 
-    <!-- Use este bloco para citações em destaque -->
-    <blockquote>
-      <p>"Frase de impacto ou citação relevante que merece destaque visual no post."</p>
-    </blockquote>
+      <blockquote><p>"Frase de impacto ou citação relevante que merece destaque visual."</p></blockquote>
+    </section>
 
-    <hr class="divider" />
+    <section class="sec" id="s2">
+      <h2>Segunda seção</h2>
+      <p>Conteúdo da segunda seção.</p>
+      <ul>
+        <li><strong>Item 1:</strong> descrição do item.</li>
+        <li><strong>Item 2:</strong> descrição do item.</li>
+        <li><strong>Item 3:</strong> descrição do item.</li>
+      </ul>
+    </section>
 
-    <h2>Segunda seção</h2>
-    <p>Conteúdo da segunda seção.</p>
-    <ul>
-      <li><strong>Item 1:</strong> Descrição do item.</li>
-      <li><strong>Item 2:</strong> Descrição do item.</li>
-      <li><strong>Item 3:</strong> Descrição do item.</li>
-    </ul>
-
-    <!-- Continue adicionando seções conforme necessário -->
+    <!-- Continue adicionando <section class="sec" id="sN"> conforme necessário -->
 
   </article>
 
-  <!-- CTA FINAL -->
+  <!-- FAQ — casa com o FAQPage do JSON-LD (mesmas perguntas/respostas) -->
+  <section class="faq">
+    <h2>Perguntas frequentes</h2>
+    <details>
+      <summary>Pergunta frequente 1?</summary>
+      <p>Resposta objetiva à pergunta 1.</p>
+    </details>
+    <details>
+      <summary>Pergunta frequente 2?</summary>
+      <p>Resposta objetiva à pergunta 2.</p>
+    </details>
+  </section>
+
+  <!-- CTA FINAL — link interno SEM UTM (UTM só no link EXTERNO da matéria quando distribuída) -->
   <div class="post-cta">
     <div>
       <h3>Quer aplicar isso no seu negócio?</h3>
@@ -202,26 +344,52 @@
     <a href="../../index.html#contato" class="btn-cta">Falar com especialista</a>
   </div>
 
-  <!-- POSTS RELACIONADOS -->
+  <!-- MATÉRIAS RELACIONADAS -->
   <div class="related">
     <h4>Leia também</h4>
     <div class="related-grid">
-      <a href="SLUG-POST-RELACIONADO-1.html" class="related-card">
+      <a href="SLUG-RELACIONADA-1.html" class="related-card">
         <div class="r-cat">Categoria</div>
-        <div class="r-title">Título do post relacionado 1</div>
+        <div class="r-title">Título da matéria relacionada 1</div>
       </a>
-      <a href="SLUG-POST-RELACIONADO-2.html" class="related-card">
+      <a href="SLUG-RELACIONADA-2.html" class="related-card">
         <div class="r-cat">Categoria</div>
-        <div class="r-title">Título do post relacionado 2</div>
+        <div class="r-title">Título da matéria relacionada 2</div>
       </a>
     </div>
   </div>
 
   <footer>
     <div class="footer-logo">EC<span>I</span>AA</div>
-    <div class="footer-copy">© 2025 ECIAA · eciaa.com.br</div>
+    <div class="footer-copy">© 2026 ECIAA · eciaa.com.br</div>
     <a href="../../index.html" style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);text-decoration:none;">← Voltar ao site</a>
   </footer>
+
+  <script>
+    // Barra de progresso de leitura
+    const bar = document.getElementById('readingProgress');
+    const onScroll = () => {
+      const h = document.documentElement;
+      const max = h.scrollHeight - h.clientHeight;
+      bar.style.width = (max > 0 ? (h.scrollTop / max) * 100 : 0) + '%';
+    };
+    document.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // Destaque da seção ativa no índice
+    const tocLinks = [...document.querySelectorAll('.toc a')];
+    const sections = tocLinks.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+    if ('IntersectionObserver' in window && sections.length) {
+      const obs = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+          }
+        });
+      }, { rootMargin: '-40% 0px -55% 0px' });
+      sections.forEach(s => obs.observe(s));
+    }
+  </script>
 
 </body>
 </html>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://eciaa.com.br/sitemap.xml

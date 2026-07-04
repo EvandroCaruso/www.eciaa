@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#060608"/>
+  <rect x="14" y="46" width="36" height="4" rx="2" fill="#c084fc"/>
+  <text x="32" y="40" font-family="'DM Mono', monospace" font-size="30" font-weight="600" fill="#e8e8f0" text-anchor="middle">e<tspan fill="#c084fc">i</tspan></text>
+</svg>

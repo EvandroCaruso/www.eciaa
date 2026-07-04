@@ -5,11 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Blog — ECIAA</title>
   <meta name="description" content="Insights, cases e estratégias sobre Inteligência Artificial aplicada a negócios. Conteúdo da ECIAA." />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href="https://eciaa.com.br/blog/" />
   <meta property="og:title" content="Blog ECIAA — IA aplicada a negócios" />
   <meta property="og:description" content="Insights, cases e estratégias sobre Inteligência Artificial aplicada a negócios." />
   <meta property="og:url" content="https://eciaa.com.br/blog/" />
   <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://eciaa.com.br/og-image.png" />
+  <meta property="og:locale" content="pt_BR" />
+  <meta property="og:site_name" content="ECIAA" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Blog ECIAA — IA aplicada a negócios" />
+  <meta name="twitter:description" content="Insights, cases e estratégias sobre Inteligência Artificial aplicada a negócios." />
+  <meta name="twitter:image" content="https://eciaa.com.br/og-image.png" />
+
+  <!-- Analytics (GA4) — descomente e troque G-XXXXXXXXXX pelo Measurement ID real -->
+  <!--
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+  -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -17,14 +37,14 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg: #060608; --surface: #0d0d12; --border: rgba(255,255,255,0.07);
-      --accent: #00e5ff; --text: #e8e8f0; --muted: #5a5a72;
+      --accent: #c084fc; --accent2: #7c3aed; --text: #e8e8f0; --muted: #5a5a72;
       --font-display: 'Syne', sans-serif; --font-mono: 'DM Mono', monospace;
     }
     html { scroll-behavior: smooth; }
     body { background: var(--bg); color: var(--text); font-family: var(--font-display); }
     body::before {
       content: ''; position: fixed; inset: 0;
-      background-image: linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
+      background-image: linear-gradient(rgba(192,132,252,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(192,132,252,0.025) 1px, transparent 1px);
       background-size: 60px 60px; pointer-events: none; z-index: 0;
     }
     nav {
@@ -54,7 +74,7 @@
       padding: 0.5rem 1.2rem; border: 1px solid var(--border); border-radius: 2px;
       background: transparent; color: var(--muted); cursor: pointer; transition: all 0.3s;
     }
-    .filter-btn:hover, .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(0,229,255,0.05); }
+    .filter-btn:hover, .filter-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(192,132,252,0.05); }
 
     /* Grid de posts */
     .posts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
@@ -63,13 +83,13 @@
       border: 1px solid var(--border); border-radius: 2px; overflow: hidden;
       transition: border-color 0.3s; text-decoration: none; display: block; color: inherit;
     }
-    .post-card:hover { border-color: rgba(0,229,255,0.3); }
+    .post-card:hover { border-color: rgba(192,132,252,0.3); }
     .post-card-body { padding: 2rem; }
     .post-meta { display: flex; gap: 1rem; align-items: center; margin-bottom: 1.2rem; }
     .post-date { font-family: var(--font-mono); font-size: 0.65rem; letter-spacing: 0.12em; color: var(--muted); }
     .post-cat {
       font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase;
-      color: var(--accent); background: rgba(0,229,255,0.08); padding: 0.2rem 0.6rem; border-radius: 2px;
+      color: var(--accent); background: rgba(192,132,252,0.08); padding: 0.2rem 0.6rem; border-radius: 2px;
     }
     .post-title { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.4; margin-bottom: 0.8rem; }
     .post-excerpt { font-family: var(--font-mono); font-size: 0.78rem; color: var(--muted); line-height: 1.8; }
@@ -104,7 +124,7 @@
       <li><a href="../index.html#servicos">Serviços</a></li>
       <li><a href="../index.html#portfolio">Portfólio</a></li>
       <li><a href="index.html" class="active">Blog</a></li>
-      <li><a href="../index.html#contato" style="color:var(--accent);border:1px solid rgba(0,229,255,0.3);padding:0.5rem 1.2rem;border-radius:2px;">Contato</a></li>
+      <li><a href="../index.html#contato" style="color:var(--accent);border:1px solid rgba(192,132,252,0.3);padding:0.5rem 1.2rem;border-radius:2px;">Contato</a></li>
     </ul>
   </nav>
 
@@ -116,61 +136,35 @@
   <div class="blog-container">
     <div class="filters">
       <button class="filter-btn active" onclick="filterPosts('todos')">Todos</button>
-      <button class="filter-btn" onclick="filterPosts('agentes')">Agentes IA</button>
+      <button class="filter-btn" onclick="filterPosts('whatsapp')">WhatsApp</button>
       <button class="filter-btn" onclick="filterPosts('automacao')">Automação</button>
-      <button class="filter-btn" onclick="filterPosts('cases')">Cases</button>
+      <button class="filter-btn" onclick="filterPosts('agentes')">Agentes IA</button>
       <button class="filter-btn" onclick="filterPosts('estrategia')">Estratégia</button>
     </div>
 
     <div class="posts-grid" id="postsGrid">
 
-      <!-- POST 1 -->
-      <a href="posts/ecossistema-agentes-que-escala.html" class="post-card" data-cat="agentes">
+      <!-- POST: Utility WhatsApp -->
+      <a href="posts/guia-aprovacao-utility-whatsapp.html" class="post-card" data-cat="whatsapp">
         <div class="post-card-body">
           <div class="post-meta">
-            <span class="post-date">Mar 2025</span>
-            <span class="post-cat">Agentes</span>
+            <span class="post-date">Jul 2026</span>
+            <span class="post-cat">WhatsApp</span>
           </div>
-          <div class="post-title">Como projetar um ecossistema de agentes que realmente escala</div>
-          <p class="post-excerpt">Os erros mais comuns ao arquitetar sistemas multi-agente e como evitá-los antes que virem dívida técnica.</p>
+          <div class="post-title">Como aprovar templates Utility no WhatsApp de primeira</div>
+          <p class="post-excerpt">A diferença que a Meta realmente avalia, a anatomia de uma mensagem aprovável e por que Utility custa uma fração do Marketing — ou até zero.</p>
           <span class="post-read">Ler artigo →</span>
         </div>
       </a>
 
-      <!-- POST 2 -->
-      <a href="posts/rag-semantico-vs-keyword.html" class="post-card" data-cat="automacao">
-        <div class="post-card-body">
-          <div class="post-meta">
-            <span class="post-date">Fev 2025</span>
-            <span class="post-cat">Automação</span>
-          </div>
-          <div class="post-title">RAG semântico vs. keyword: quando usar cada abordagem</div>
-          <p class="post-excerpt">Uma análise prática das diferenças entre busca vetorial e keyword search para sistemas de recuperação de contexto.</p>
-          <span class="post-read">Ler artigo →</span>
-        </div>
-      </a>
-
-      <!-- POST 3 -->
-      <a href="posts/mcp-conectando-ferramentas.html" class="post-card" data-cat="automacao">
-        <div class="post-card-body">
-          <div class="post-meta">
-            <span class="post-date">Jan 2025</span>
-            <span class="post-cat">Automação</span>
-          </div>
-          <div class="post-title">MCP na prática: conectando ferramentas reais a agentes de IA</div>
-          <p class="post-excerpt">Um guia direto sobre o Model Context Protocol e como ele muda a forma de integrar IA a sistemas corporativos.</p>
-          <span class="post-read">Ler artigo →</span>
-        </div>
-      </a>
-
-      <!-- ADICIONE NOVOS POSTS AQUI seguindo o mesmo padrão -->
+      <!-- ADICIONE NOVOS POSTS AQUI seguindo o mesmo padrão (a skill materia-nova automatiza) -->
 
     </div>
   </div>
 
   <footer>
     <div class="footer-logo">EC<span>I</span>AA</div>
-    <div class="footer-copy">© 2025 ECIAA · eciaa.com.br</div>
+    <div class="footer-copy">© 2026 ECIAA · eciaa.com.br</div>
     <a href="../index.html" style="font-family:var(--font-mono);font-size:0.65rem;color:var(--muted);text-decoration:none;">← Voltar ao site</a>
   </footer>
 
