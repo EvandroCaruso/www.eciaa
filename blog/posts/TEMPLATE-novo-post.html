@@ -103,7 +103,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -111,6 +111,7 @@
       --bg: #060608; --surface: #0d0d12; --border: rgba(255,255,255,0.07);
       --accent: #c084fc; --accent2: #7c3aed; --text: #e8e8f0; --muted: #5a5a72;
       --font-display: 'Syne', sans-serif; --font-mono: 'DM Mono', monospace;
+      --font-body: 'Inter', sans-serif; --read: #cdd0dc;
     }
     html { scroll-behavior: smooth; }
     body { background: var(--bg); color: var(--text); font-family: var(--font-display); }
@@ -230,6 +231,24 @@
       .metric-highlight { grid-template-columns: 1fr 1fr; }
       .related-grid { grid-template-columns: 1fr; }
       footer { flex-direction: column; text-align: center; }
+    }
+
+    /* Legibilidade do corpo — leitura antes de estética */
+    .post-lead, .post-content p, .post-content li, .post-content h3,
+    .toc a, .faq summary, .faq details p, .post-content blockquote p {
+      font-family: var(--font-body); letter-spacing: normal;
+    }
+    .post-content p, .post-content li, .faq details p { font-size: 1.06rem; line-height: 1.85; color: var(--read); }
+    .post-content li { font-size: 1.02rem; line-height: 1.8; }
+    .post-lead { font-size: 1.2rem; line-height: 1.75; color: #b9bccb; }
+    .post-content h3 { font-size: 1.15rem; font-weight: 600; color: var(--accent); }
+    .post-content p strong, .post-content li strong { font-weight: 600; color: var(--text); }
+    .post-content blockquote p { font-size: 1.18rem; line-height: 1.7; color: var(--text); }
+    .toc a { font-size: 0.98rem; }
+    .faq summary { font-size: 1rem; color: var(--text); }
+    @media (max-width: 900px) {
+      .post-content p, .post-content li, .faq details p { font-size: 1.02rem; }
+      .post-lead { font-size: 1.08rem; }
     }
   </style>
 </head>
