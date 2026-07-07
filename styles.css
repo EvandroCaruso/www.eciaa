@@ -402,8 +402,9 @@ figcaption { font-size: 0.82rem; color: var(--faint); text-align: center; margin
 /* ---------- Ecossistema (diagrama de integrações) ---------- */
 .eco-wrap { max-width: 1080px; margin: 0 auto; }
 .eco-diagram { width: 100%; height: auto; display: block; }
-.eco-line { fill: none; stroke: url(#eco-grad); stroke-width: 2; stroke-dasharray: 5 7; opacity: 0.55; animation: ecoflow 1.4s linear infinite; }
-@keyframes ecoflow { to { stroke-dashoffset: -24; } }
+.eco-link { fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-dasharray: 0.1 9; opacity: 0.6; animation: ecoflow 20s linear infinite; }
+@keyframes ecoflow { to { stroke-dashoffset: -180; } }
+.eco-dot { filter: drop-shadow(0 0 3px rgba(23,21,34,0.18)); }
 .eco-node { filter: drop-shadow(0 10px 22px rgba(23,21,34,0.10)); }
 .eco-hub { filter: drop-shadow(0 16px 34px rgba(124,58,237,0.28)); }
 .eco-node-name { font-family: var(--font); font-weight: 700; font-size: 15px; fill: var(--ink); }

@@ -186,15 +186,28 @@
             </linearGradient>
           </defs>
 
-          <!-- conexões (atrás) -->
-          <line class="eco-line" x1="540" y1="330" x2="540" y2="80"/>
-          <line class="eco-line" x1="540" y1="330" x2="851" y2="153"/>
-          <line class="eco-line" x1="540" y1="330" x2="980" y2="330"/>
-          <line class="eco-line" x1="540" y1="330" x2="851" y2="507"/>
-          <line class="eco-line" x1="540" y1="330" x2="540" y2="580"/>
-          <line class="eco-line" x1="540" y1="330" x2="229" y2="507"/>
-          <line class="eco-line" x1="540" y1="330" x2="100" y2="330"/>
-          <line class="eco-line" x1="540" y1="330" x2="229" y2="153"/>
+          <!-- conexões curvas (na cor de cada marca) -->
+          <g>
+            <path class="eco-link" stroke="#10A37F" d="M540 80 Q600 205 540 330"/>
+            <path class="eco-link" stroke="#D97757" d="M851 153 Q720 285 540 330"/>
+            <path class="eco-link" stroke="#4285F4" d="M980 330 Q760 390 540 330"/>
+            <path class="eco-link" stroke="#0467DF" d="M851 507 Q671 462 540 330"/>
+            <path class="eco-link" stroke="#6366F1" d="M540 580 Q480 455 540 330"/>
+            <path class="eco-link" stroke="#7C3AED" d="M229 507 Q360 375 540 330"/>
+            <path class="eco-link" stroke="#EA5B0C" d="M100 330 Q320 270 540 330"/>
+            <path class="eco-link" stroke="#16A34A" d="M229 153 Q409 198 540 330"/>
+          </g>
+          <!-- pulsos de dados fluindo para o ECIAA -->
+          <g class="eco-dots" aria-hidden="true">
+            <circle class="eco-dot" r="4" fill="#10A37F"><animateMotion dur="2.6s" begin="0s" repeatCount="indefinite" path="M540 80 Q600 205 540 330"/></circle>
+            <circle class="eco-dot" r="4" fill="#D97757"><animateMotion dur="2.6s" begin="0.33s" repeatCount="indefinite" path="M851 153 Q720 285 540 330"/></circle>
+            <circle class="eco-dot" r="4" fill="#4285F4"><animateMotion dur="2.6s" begin="0.65s" repeatCount="indefinite" path="M980 330 Q760 390 540 330"/></circle>
+            <circle class="eco-dot" r="4" fill="#0467DF"><animateMotion dur="2.6s" begin="0.98s" repeatCount="indefinite" path="M851 507 Q671 462 540 330"/></circle>
+            <circle class="eco-dot" r="4" fill="#6366F1"><animateMotion dur="2.6s" begin="1.3s" repeatCount="indefinite" path="M540 580 Q480 455 540 330"/></circle>
+            <circle class="eco-dot" r="4" fill="#7C3AED"><animateMotion dur="2.6s" begin="1.63s" repeatCount="indefinite" path="M229 507 Q360 375 540 330"/></circle>
+            <circle class="eco-dot" r="4" fill="#EA5B0C"><animateMotion dur="2.6s" begin="1.95s" repeatCount="indefinite" path="M100 330 Q320 270 540 330"/></circle>
+            <circle class="eco-dot" r="4" fill="#16A34A"><animateMotion dur="2.6s" begin="2.28s" repeatCount="indefinite" path="M229 153 Q409 198 540 330"/></circle>
+          </g>
 
           <!-- hub central -->
           <g class="eco-hub">
