@@ -1,0 +1,96 @@
+/* Canvas — tema ECiaA por cima do Vue Flow.
+   Referência visual: ChatPRO (cartões com faixa colorida por tipo).
+   Referência conceitual: n8n (saídas indexadas, conectar arrastando do handle). */
+
+.mf-canvas { flex: 1; min-width: 0; position: relative; }
+.mf-canvas .vue-flow { background: var(--bg); }
+
+.vue-flow__background { color: var(--border); }
+
+.vue-flow__edge-path,
+.vue-flow__connection-path {
+  stroke: var(--text2);
+  stroke-width: 2;
+}
+.vue-flow__edge.selected .vue-flow__edge-path,
+.vue-flow__edge:hover .vue-flow__edge-path { stroke: var(--accent); }
+
+.vue-flow__handle {
+  width: 11px;
+  height: 11px;
+  background: var(--surface);
+  border: 2px solid var(--text2);
+}
+.vue-flow__handle:hover { border-color: var(--accent); background: var(--accent); }
+
+.vue-flow__controls { box-shadow: none; }
+.vue-flow__controls-button {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  fill: var(--text2);
+}
+.vue-flow__controls-button:hover { background: var(--surface2); }
+.vue-flow__minimap { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+
+/* ---------- o nó ---------- */
+
+.mf-node {
+  width: 230px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 13px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+.mf-node.is-selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.mf-node.is-invalid { border-color: var(--error); }
+
+.mf-node__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface2);
+  border-left: 4px solid var(--node-color, var(--accent));
+}
+.mf-node__icon { font-size: 15px; line-height: 1; }
+.mf-node__name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.mf-node__type { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: .4px; }
+
+.mf-node__body {
+  padding: 8px 10px;
+  color: var(--text2);
+  min-height: 34px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 88px;
+  overflow: hidden;
+}
+.mf-node__body:empty::before { content: 'Clique para configurar'; opacity: .6; font-style: italic; }
+
+.mf-node__outputs {
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+.mf-node__output {
+  position: relative;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--text2);
+  text-align: right;
+  min-height: 24px;
+}
+.mf-node__output + .mf-node__output { border-top: 1px dashed var(--border); }
+
+/* handles ancorados na linha da própria saída, como no n8n */
+.mf-node__output .vue-flow__handle { right: -6px; top: 50%; transform: translateY(-50%); }
+.mf-node .vue-flow__handle-left { left: -6px; top: 22px; }
