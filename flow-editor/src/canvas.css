@@ -1,6 +1,6 @@
 /* Canvas — tema ECiaA por cima do Vue Flow.
    Referência visual: ChatPRO (cartões com faixa colorida por tipo).
-   Referência conceitual: n8n (saídas indexadas, conectar arrastando do handle). */
+   Referência de interação: n8n (botão +, toolbar no nó, menu de contexto). */
 
 .mf-canvas { flex: 1; min-width: 0; position: relative; }
 .mf-canvas .vue-flow { background: var(--bg); }
@@ -12,16 +12,11 @@
   stroke: var(--text2);
   stroke-width: 2;
 }
-.vue-flow__edge.selected .vue-flow__edge-path,
-.vue-flow__edge:hover .vue-flow__edge-path { stroke: var(--accent); }
-
-.vue-flow__handle {
-  width: 11px;
-  height: 11px;
-  background: var(--surface);
-  border: 2px solid var(--text2);
-}
-.vue-flow__handle:hover { border-color: var(--accent); background: var(--accent); }
+.vue-flow__edge:hover .vue-flow__edge-path { stroke: var(--accent2); stroke-width: 3; }
+.vue-flow__edge.selected .vue-flow__edge-path { stroke: var(--accent); stroke-width: 3; }
+/* faixa invisível e grossa em volta da aresta: dá o que clicar sem engrossar o traço */
+.vue-flow__edge-interaction { stroke-width: 20; }
+.vue-flow__edge { cursor: pointer; }
 
 .vue-flow__controls { box-shadow: none; }
 .vue-flow__controls-button {
@@ -34,17 +29,19 @@
 
 /* ---------- o nó ---------- */
 
+/* Sem overflow:hidden aqui. Ele arredondava as bordas mas cortava os handles
+   ao meio (eles ficam para fora do cartão de propósito). O arredondamento vem
+   dos cantos das faixas interna. */
 .mf-node {
   width: 230px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
-  overflow: hidden;
   font-size: 13px;
   box-shadow: 0 2px 8px rgba(0,0,0,.3);
+  position: relative;
 }
 .mf-node.is-selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
-.mf-node.is-invalid { border-color: var(--error); }
 
 .mf-node__head {
   display: flex;
@@ -53,6 +50,7 @@
   padding: 8px 10px;
   background: var(--surface2);
   border-left: 4px solid var(--node-color, var(--accent));
+  border-radius: 7px 7px 0 0;
 }
 .mf-node__icon { font-size: 15px; line-height: 1; }
 .mf-node__name {
@@ -60,7 +58,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex: 1;
 }
 .mf-node__type { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: .4px; }
 
@@ -73,7 +70,9 @@
   word-break: break-word;
   max-height: 88px;
   overflow: hidden;
+  border-radius: 0 0 7px 7px;
 }
+.mf-node__body.has-outputs { border-radius: 0; }
 .mf-node__body:empty::before { content: 'Clique para configurar'; opacity: .6; font-style: italic; }
 
 .mf-node__outputs {
@@ -89,8 +88,163 @@
   text-align: right;
   min-height: 24px;
 }
+.mf-node__output:last-child { border-radius: 0 0 7px 7px; }
 .mf-node__output + .mf-node__output { border-top: 1px dashed var(--border); }
 
-/* handles ancorados na linha da própria saída, como no n8n */
-.mf-node__output .vue-flow__handle { right: -6px; top: 50%; transform: translateY(-50%); }
-.mf-node .vue-flow__handle-left { left: -6px; top: 22px; }
+/* ---------- handles ---------- */
+/* Bolinha inteira, centrada na borda do cartão. */
+.mf-node .vue-flow__handle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--text2);
+  z-index: 2;
+}
+.mf-node .vue-flow__handle:hover,
+.mf-node .vue-flow__handle.connectionindicator:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  transform: scale(1.25);
+}
+.mf-node .vue-flow__handle-left  { left: -7px;  top: 22px; }
+.mf-node .vue-flow__handle-right { right: -7px; }
+.mf-node__output .vue-flow__handle-right { top: 50%; transform: translateY(-50%); }
+.mf-node__output .vue-flow__handle-right:hover { transform: translateY(-50%) scale(1.25); }
+
+/* ---------- toolbar do nó (aparece no hover ou quando selecionado) ---------- */
+
+.mf-node__tools {
+  position: absolute;
+  top: -14px;
+  right: 6px;
+  display: none;
+  gap: 4px;
+  z-index: 5;
+}
+.mf-node:hover .mf-node__tools,
+.mf-node.is-selected .mf-node__tools { display: flex; }
+
+.mf-node__tool {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+}
+.mf-node__tool:hover { border-color: var(--accent); color: var(--text); }
+.mf-node__tool--danger:hover { border-color: var(--error); color: var(--error); }
+.mf-node__tool:disabled { opacity: .3; cursor: not-allowed; }
+
+/* ---------- botão + e seletor de blocos ---------- */
+
+.mf-add-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 12;
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+}
+.mf-add-btn:hover { background: var(--accent2); }
+.mf-add-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.mf-picker {
+  position: absolute;
+  top: 62px;
+  right: 14px;
+  width: 260px;
+  max-height: 70%;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  z-index: 12;
+  box-shadow: 0 12px 32px rgba(0,0,0,.5);
+}
+.mf-picker__title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text2); }
+.mf-picker__hint { font-size: 11px; color: var(--text2); margin: 4px 0 12px; }
+.mf-picker__group-label { font-size: 10px; text-transform: uppercase; color: var(--text2); margin: 12px 0 6px; letter-spacing: .5px; }
+.mf-picker__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  margin-bottom: 6px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--node-color, var(--accent));
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+  cursor: grab;
+}
+.mf-picker__item:hover { border-color: var(--accent); border-left-color: var(--node-color, var(--accent)); }
+.mf-picker__icon { font-size: 15px; }
+.mf-picker__empty { font-size: 12px; color: var(--text2); padding: 8px 0; }
+
+/* ---------- menu de contexto (botão direito) ---------- */
+
+.mf-ctx {
+  position: fixed;
+  z-index: 200;
+  min-width: 190px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.55);
+}
+.mf-ctx__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--text2);
+  padding: 6px 10px 4px;
+}
+.mf-ctx button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  padding: 7px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.mf-ctx button:hover:not(:disabled) { background: var(--bg); }
+.mf-ctx button:disabled { opacity: .35; cursor: not-allowed; }
+.mf-ctx button.is-danger { color: var(--error); }
+.mf-ctx kbd {
+  font: 10px/1 'Segoe UI', sans-serif;
+  color: var(--text2);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+.mf-ctx__sep { height: 1px; background: var(--border); margin: 4px 0; }

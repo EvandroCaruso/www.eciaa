@@ -1,19 +1,26 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 import { handleIdFor } from '../core/graph.js'
 
 const props = defineProps({
+  id: { type: String, required: true },
   data: { type: Object, required: true },
   selected: { type: Boolean, default: false }
 })
 
+// O editor injeta as ações; assim o nó não precisa emitir para cima nem
+// carregar callbacks dentro de `data` (que é serializado no grafo).
+const acoes = inject('msgflowAcoes', null)
+
 const spec = computed(() => props.data.spec || {})
 const color = computed(() => spec.value.color || 'var(--accent)')
 const outputs = computed(() => spec.value.outputs || [{ key: 'main', label: '' }])
+const schema = computed(() => spec.value.params_schema || {})
 const isStart = computed(() => props.data.nodeType === 'eciaa.start')
+const podeExcluir = computed(() => schema.value.deletable !== false)
+const podeDuplicar = computed(() => schema.value.singleton !== true)
 
-/** Prévia do conteúdo dentro do cartão — o que dá leitura ao canvas. */
 const preview = computed(() => {
   const p = props.data.parameters || {}
   if (props.data.nodeType === 'eciaa.content') return p.text || ''
@@ -36,6 +43,22 @@ function labelOp(op) {
 
 <template>
   <div class="mf-node" :class="{ 'is-selected': selected }" :style="{ '--node-color': color }">
+    <!-- atalhos rápidos: aparecem no hover ou com o bloco selecionado -->
+    <div v-if="acoes" class="mf-node__tools nodrag nopan">
+      <button
+        v-if="podeDuplicar"
+        class="mf-node__tool"
+        title="Duplicar bloco (Ctrl+D)"
+        @click.stop="acoes.duplicar(id)"
+      >⧉</button>
+      <button
+        class="mf-node__tool mf-node__tool--danger"
+        :disabled="!podeExcluir"
+        :title="podeExcluir ? 'Excluir bloco (Del)' : 'O bloco de Início não pode ser excluído'"
+        @click.stop="podeExcluir && acoes.excluir(id)"
+      >✕</button>
+    </div>
+
     <Handle v-if="!isStart" type="target" :position="Position.Left" id="in-0" />
 
     <div class="mf-node__head">
@@ -46,7 +69,7 @@ function labelOp(op) {
       </div>
     </div>
 
-    <div class="mf-node__body">{{ preview }}</div>
+    <div class="mf-node__body has-outputs">{{ preview }}</div>
 
     <div class="mf-node__outputs">
       <div v-for="(out, i) in outputs" :key="out.key" class="mf-node__output">
