@@ -81,19 +81,28 @@ const selectedNode = computed(() => {
 const report = computed(() => validate(graph.value, typesByKey.value))
 
 /**
+ * `pendente` = existe algo além do que está no ar. Dois jeitos de acontecer:
+ * o que está na tela não foi salvo (`dirty`), ou existe rascunho salvo que não
+ * foi publicado (`has_draft`).
+ *
+ * ⚠️ Esta é a MESMA definição que o ponto 🟢/🟡 usa na lista, e tem de continuar
+ * sendo. Na primeira versão o ponto olhava só `dirty` aqui e só `has_draft` lá —
+ * resultado: o mesmo fluxo aparecia verde no editor e amarelo na lista, e o
+ * editor se contradizia (botão dizendo "Publicar alterações" ao lado de um ponto
+ * verde). Se mudar um lado, mude o outro.
+ */
+const pendente = computed(() => dirty.value || flowMeta.value.has_draft)
+
+/**
  * Um único botão no slot principal, com três estados (decisão do Evandro, 29/07).
- * A regra: o slot mostra a ação mais importante do momento.
+ * O slot mostra a ação mais importante do momento:
  *
  *   não publicado ................ Publicar
  *   publicado, com pendência ..... Publicar alterações
  *   publicado e em dia ........... Despublicar
  *
- * "Pendência" é tanto o que está na tela e não foi salvo (dirty) quanto o
- * rascunho salvo que ainda não foi ao ar (has_draft) — nos dois casos o que está
- * rodando difere do que se está editando, e publicar é o que resolve.
  * Despublicar um fluxo COM pendência continua possível pelo menu ⋮ da lista.
  */
-const pendente = computed(() => dirty.value || flowMeta.value.has_draft)
 
 const acaoPublicacao = computed(() => {
   if (!flowMeta.value.is_published) return { modo: 'publicar', label: 'Publicar', primary: true }
@@ -735,10 +744,12 @@ onBeforeUnmount(() => {
       <span class="mf-status">
         <span
           class="mf-dot"
-          :class="dirty ? 'is-warn' : 'is-ok'"
+          :class="pendente ? 'is-warn' : 'is-ok'"
           :title="dirty
             ? 'O que está na tela ainda não foi salvo.'
-            : 'O que está na tela é a última versão salva.'"
+            : (flowMeta.has_draft
+                ? 'Há alterações salvas que ainda não foram publicadas.'
+                : 'Não há alterações pendentes.')"
         ></span>
         <span class="mf-badge" :class="{ 'mf-badge--ok': flowMeta.is_published }">
           {{ flowMeta.is_published ? 'Publicado' : 'Não publicado' }}

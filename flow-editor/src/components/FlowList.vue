@@ -608,15 +608,22 @@ async function onDrop(folderId, ev) {
             <td>
               <!--
                 Dois controles independentes (decisão de 2026-07-29):
-                  badge = está no ar ou não · ponto = o salvo está em dia ou não.
+                  badge = está no ar ou não
+                  ponto = existe algo ALÉM do que está no ar?
                 Versão (v1, v2…) saiu daqui — segue viva em msgflow_flow_versions.
+
+                ⚠️ O ponto tem de significar o MESMO que no editor (lá é
+                `pendente`, em FlowEditor.vue). Aqui só dá para saber de rascunho
+                salvo; o editor também sabe do não-salvo. Se mudar um, mude o outro
+                — já divergiu uma vez e o mesmo fluxo apareceu verde num lado e
+                amarelo no outro.
               -->
               <span class="mf-status">
                 <span
                   class="mf-dot"
                   :class="flow.has_draft ? 'is-warn' : 'is-ok'"
                   :title="flow.has_draft
-                    ? 'Há alterações salvas em rascunho que ainda não foram publicadas.'
+                    ? 'Há alterações salvas que ainda não foram publicadas.'
                     : 'Não há alterações pendentes.'"
                 ></span>
                 <span class="mf-badge" :class="{ 'mf-badge--ok': flow.is_published }">
