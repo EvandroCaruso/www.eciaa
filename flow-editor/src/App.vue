@@ -18,6 +18,9 @@ const screen = ref('list')
 const currentFlowId = ref(null)
 const currentFolder = ref(null)
 const folders = ref([])
+// ordenação da lista: mesma razão da pasta — sobrevive à ida e volta ao editor
+const sortBy = ref('name')
+const sortDir = ref('asc')
 const toast = ref(null)
 let toastTimer = null
 
@@ -54,6 +57,8 @@ function backToList(folderId) {
     <FlowList
       v-if="screen === 'list'"
       v-model:folder-id="currentFolder"
+      v-model:sort-by="sortBy"
+      v-model:sort-dir="sortDir"
       @open="openFlow"
       @toast="showToast"
       @folders="folders = $event"

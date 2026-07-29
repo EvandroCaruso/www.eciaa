@@ -15,14 +15,40 @@ import { isFlowNameTaken, uniqueFlowName } from '../core/names.js'
 import ModalDialog from './ModalDialog.vue'
 
 const props = defineProps({
-  folderId: { type: [Number, String], default: null }
+  folderId: { type: [Number, String], default: null },
+  // Ordenação também é do App, pelo mesmo motivo da pasta: a lista é destruída
+  // ao abrir um fluxo, e voltar não pode reembaralhar o que o usuário ordenou.
+  sortBy: { type: String, default: 'name' },   // 'name' | 'status' | 'updated'
+  sortDir: { type: String, default: 'asc' }
 })
-const emit = defineEmits(['open', 'toast', 'update:folderId', 'folders'])
+const emit = defineEmits(['open', 'toast', 'update:folderId', 'update:sortBy', 'update:sortDir', 'folders'])
 
 const loading = ref(true)
 const folders = ref([])
 const flows = ref([])
 const search = ref('')
+
+// Buscar procura em TODAS as pastas, não só na corrente: quem digita um nome
+// quer o fluxo, não quer lembrar onde guardou.
+const buscando = computed(() => search.value.trim().length > 0)
+
+const sortBy = computed({ get: () => props.sortBy, set: (v) => emit('update:sortBy', v) })
+const sortDir = computed({ get: () => props.sortDir, set: (v) => emit('update:sortDir', v) })
+
+function toggleSort(key) {
+  if (sortBy.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = key
+    // data começa pelo mais recente; texto e situação, pelo começo
+    sortDir.value = key === 'updated' ? 'desc' : 'asc'
+  }
+}
+
+function setaDe(key) {
+  if (sortBy.value !== key) return ''
+  return sortDir.value === 'asc' ? '▲' : '▼'
+}
 
 const currentFolder = computed({
   get: () => props.folderId ?? null,
@@ -60,21 +86,36 @@ function pathLabel(folderId) {
   return p.length ? p.map((f) => f.folder_name).join(' / ') : 'Raiz'
 }
 
+/** Situação como número, para ordenar: 0 = não publicado, 1 = publicado. */
+function rankSituacao(f) {
+  return f.version > 0 ? 1 : 0
+}
+
+function comparar(a, b) {
+  const dir = sortDir.value === 'asc' ? 1 : -1
+  if (sortBy.value === 'updated') {
+    const d = new Date(a.updated_at || 0) - new Date(b.updated_at || 0)
+    if (d !== 0) return d * dir
+  } else if (sortBy.value === 'status') {
+    const d = rankSituacao(a) - rankSituacao(b)
+    if (d !== 0) return d * dir
+  } else {
+    return a.flow_name.localeCompare(b.flow_name, 'pt-BR') * dir
+  }
+  // empate sempre desempata por nome, para a ordem não dançar entre renders
+  return a.flow_name.localeCompare(b.flow_name, 'pt-BR')
+}
+
 const visibleFlows = computed(() => {
   const term = search.value.trim().toLowerCase()
-  return flows.value
-    .filter((f) => (f.folder_id ?? null) === currentFolder.value)
-    .filter((f) => !term || f.flow_name.toLowerCase().includes(term))
-    .sort((a, b) => a.flow_name.localeCompare(b.flow_name, 'pt-BR'))
+  const base = buscando.value
+    ? flows.value.filter((f) => f.flow_name.toLowerCase().includes(term))
+    : flows.value.filter((f) => (f.folder_id ?? null) === currentFolder.value)
+  return [...base].sort(comparar)
 })
 
 const visibleFolders = computed(() =>
   folders.value.filter((f) => (f.parent_id ?? null) === currentFolder.value)
-)
-
-/** Pastas de destino do "Mover para", ordenadas pelo caminho inteiro. */
-const moveTargets = computed(() =>
-  [...folders.value].sort((a, b) => pathLabel(a.id).localeCompare(pathLabel(b.id), 'pt-BR'))
 )
 
 function countIn(folderId) {
@@ -278,15 +319,63 @@ function formatDate(iso) {
 const menuFor = ref(null)
 const menuEl = ref(null)
 const menuPos = ref({ left: 0, top: 0, maxHeight: 320 })
+const menuAnchor = ref(null)
+
+// "Mover para" começa FECHADO e abre em árvore: despejar todas as pastas de uma
+// vez fazia o menu nascer gigante e escondia Excluir lá embaixo.
+const moveOpen = ref(false)
+const expandidas = ref(new Set())
+
+function childrenOf(parentId) {
+  return folders.value
+    .filter((f) => (f.parent_id ?? null) === (parentId ?? null))
+    .sort((a, b) => a.folder_name.localeCompare(b.folder_name, 'pt-BR'))
+}
+
+/** Achata a árvore em lista, respeitando o que está expandido. */
+const moveTree = computed(() => {
+  const out = []
+  const walk = (parentId, depth) => {
+    for (const f of childrenOf(parentId)) {
+      const temFilhas = childrenOf(f.id).length > 0
+      const aberta = expandidas.value.has(f.id)
+      out.push({ folder: f, depth, temFilhas, aberta })
+      if (aberta) walk(f.id, depth + 1)
+    }
+  }
+  walk(null, 0)
+  return out
+})
+
+async function toggleExpandida(id) {
+  const s = new Set(expandidas.value)
+  if (s.has(id)) s.delete(id)
+  else s.add(id)
+  expandidas.value = s
+  // a altura do menu mudou; reposicionar para não vazar da tela
+  await nextTick()
+  if (menuAnchor.value) positionMenu(menuAnchor.value)
+}
+
+async function toggleMoveOpen() {
+  moveOpen.value = !moveOpen.value
+  await nextTick()
+  if (menuAnchor.value) positionMenu(menuAnchor.value)
+}
 
 function closeMenu() {
   menuFor.value = null
+  moveOpen.value = false
+  expandidas.value = new Set()
 }
 
 async function toggleMenu(flow, ev) {
   if (menuFor.value === flow.id) return closeMenu()
   const rect = ev.currentTarget.getBoundingClientRect()
+  menuAnchor.value = rect
   menuFor.value = flow.id
+  moveOpen.value = false
+  expandidas.value = new Set()
   await nextTick()
   positionMenu(rect)
 }
@@ -343,6 +432,11 @@ onBeforeUnmount(() => {
 const dragFlowId = ref(null)
 const dropAlvo = ref(undefined) // undefined = nenhum · null = raiz · number = pasta
 
+// A linha só fica arrastável depois que o mouse desce SOBRE A ALÇA. Sem isso, a
+// linha inteira vira área de arrasto e o cursor de "agarrar" aparece onde o
+// usuário só queria selecionar o texto do nome.
+const dragArmed = ref(null)
+
 const arrastando = computed(() => dragFlowId.value !== null)
 
 function podeSoltarEm(folderId) {
@@ -363,6 +457,7 @@ function onDragStart(flow, ev) {
 function onDragEnd() {
   dragFlowId.value = null
   dropAlvo.value = undefined
+  dragArmed.value = null
 }
 
 function onDragOver(folderId, ev) {
@@ -425,7 +520,9 @@ async function onDrop(folderId, ev) {
     <div v-if="loading" class="mf-empty">Carregando…</div>
 
     <template v-else>
-      <div v-if="visibleFolders.length" class="mf-folders">
+      <!-- durante a busca as pastas somem: o resultado é global, mostrar a pasta
+           corrente ao lado dele só confundiria sobre o escopo do que se vê -->
+      <div v-if="visibleFolders.length && !buscando" class="mf-folders">
         <div
           v-for="folder in visibleFolders"
           :key="folder.id"
@@ -456,15 +553,17 @@ async function onDrop(folderId, ev) {
 
       <div class="mf-list__toolbar">
         <input v-model="search" class="mf-input" style="max-width:280px" placeholder="Buscar fluxo…" />
-        <span v-if="arrastando" class="mf-help">Solte sobre uma pasta — ou sobre o caminho, para tirar da pasta.</span>
+        <span v-if="buscando" class="mf-help">Buscando em <strong>todas as pastas</strong>.</span>
+        <span v-else-if="arrastando" class="mf-help">Solte sobre uma pasta — ou sobre o caminho, para tirar da pasta.</span>
       </div>
 
       <table v-if="visibleFlows.length" class="mf-table">
         <thead>
           <tr>
-            <th>Nome</th>
-            <th style="width:150px">Situação</th>
-            <th style="width:140px">Última alteração</th>
+            <th style="width:34px"></th>
+            <th class="is-sortable" @click="toggleSort('name')">Nome <span class="mf-sort">{{ setaDe('name') }}</span></th>
+            <th style="width:160px" class="is-sortable" @click="toggleSort('status')">Situação <span class="mf-sort">{{ setaDe('status') }}</span></th>
+            <th style="width:160px" class="is-sortable" @click="toggleSort('updated')">Última alteração <span class="mf-sort">{{ setaDe('updated') }}</span></th>
             <th style="width:44px"></th>
           </tr>
         </thead>
@@ -473,13 +572,25 @@ async function onDrop(folderId, ev) {
             v-for="flow in visibleFlows"
             :key="flow.id"
             :class="{ 'is-dragging': dragFlowId === flow.id }"
-            :draggable="crud.update"
+            :draggable="crud.update && dragArmed === flow.id"
             @dragstart="onDragStart(flow, $event)"
             @dragend="onDragEnd"
             @dblclick="emit('open', flow.id)"
           >
+            <td class="mf-grip-cell">
+              <!-- só esta alça arma o arrasto; o resto da linha segue clicável/selecionável -->
+              <span
+                v-if="crud.update"
+                class="mf-grip"
+                title="Arraste para mover o fluxo para uma pasta"
+                @mousedown="dragArmed = flow.id"
+                @mouseup="dragArmed = null"
+              >⠿</span>
+            </td>
             <td>
               <a href="#" class="mf-table__link" @click.prevent="emit('open', flow.id)">{{ flow.flow_name }}</a>
+              <!-- na busca global o resultado não diz nada sem o lugar de onde veio -->
+              <div v-if="buscando" class="mf-help">📁 {{ pathLabel(flow.folder_id) }}</div>
               <div v-if="flow.description" class="mf-help">{{ flow.description }}</div>
             </td>
             <td>
@@ -510,7 +621,7 @@ async function onDrop(folderId, ev) {
       </table>
 
       <div v-else class="mf-empty">
-        <p v-if="search">Nenhum fluxo encontrado para “{{ search }}”.</p>
+        <p v-if="buscando">Nenhum fluxo com “{{ search }}” em nenhuma pasta.</p>
         <template v-else>
           <p>Nenhum fluxo {{ currentPath.length ? 'nesta pasta' : 'ainda' }}.</p>
           <button v-if="crud.create" class="mf-btn mf-btn--primary" @click="askNewFlow">Criar o primeiro fluxo</button>
@@ -533,13 +644,40 @@ async function onDrop(folderId, ev) {
           <button @click="exportFlow(flow)">Exportar JSON</button>
           <template v-if="crud.update">
             <div class="mf-menu__sep"></div>
-            <div class="mf-menu__label">Mover para</div>
-            <button v-if="flow.folder_id !== null" @click="moveTo(flow, null)">Raiz</button>
-            <button
-              v-for="f in moveTargets.filter((x) => x.id !== flow.folder_id)"
-              :key="f.id"
-              @click="moveTo(flow, f.id)"
-            >{{ pathLabel(f.id) }}</button>
+            <button class="mf-menu__toggle" @click.stop="toggleMoveOpen">
+              <span>Mover para…</span>
+              <span class="mf-menu__chev">{{ moveOpen ? '▾' : '▸' }}</span>
+            </button>
+            <template v-if="moveOpen">
+              <!-- Raiz aparece SEMPRE; quando o fluxo já está nela, fica só como marcação -->
+              <button
+                class="mf-menu__node"
+                :disabled="flow.folder_id === null"
+                @click="moveTo(flow, null)"
+              >
+                <span class="mf-menu__plus"></span>
+                <span>🏠 Raiz</span>
+                <span v-if="flow.folder_id === null" class="mf-menu__aqui">aqui</span>
+              </button>
+              <button
+                v-for="n in moveTree"
+                :key="n.folder.id"
+                class="mf-menu__node"
+                :style="{ paddingLeft: `${10 + n.depth * 14}px` }"
+                :disabled="n.folder.id === flow.folder_id"
+                @click="moveTo(flow, n.folder.id)"
+              >
+                <span
+                  v-if="n.temFilhas"
+                  class="mf-menu__plus is-clickable"
+                  :title="n.aberta ? 'Recolher subpastas' : 'Mostrar subpastas'"
+                  @click.stop="toggleExpandida(n.folder.id)"
+                >{{ n.aberta ? '−' : '+' }}</span>
+                <span v-else class="mf-menu__plus"></span>
+                <span>📁 {{ n.folder.folder_name }}</span>
+                <span v-if="n.folder.id === flow.folder_id" class="mf-menu__aqui">aqui</span>
+              </button>
+            </template>
           </template>
           <template v-if="crud.delete">
             <div class="mf-menu__sep"></div>
@@ -603,11 +741,28 @@ async function onDrop(folderId, ev) {
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
 }
+.mf-table th.is-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+.mf-table th.is-sortable:hover { color: var(--text); }
+.mf-sort { color: var(--accent2); font-size: 9px; }
+
 .mf-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
 .mf-table tr:last-child td { border-bottom: none; }
 .mf-table tr:hover td { background: var(--surface2); }
-.mf-table tr[draggable='true'] { cursor: grab; }
 .mf-table tr.is-dragging td { opacity: .45; }
+
+/* alça de arrasto: a única parte da linha que agarra */
+.mf-grip-cell { padding-right: 0 !important; }
+.mf-grip {
+  display: inline-block;
+  cursor: grab;
+  color: var(--text2);
+  opacity: .35;
+  letter-spacing: -2px;
+  padding: 0 2px;
+  transition: opacity .15s;
+}
+.mf-table tr:hover .mf-grip { opacity: .9; }
+.mf-grip:active { cursor: grabbing; }
 .mf-table__link { color: var(--text); text-decoration: none; font-weight: 500; }
 .mf-table__link:hover { color: var(--accent2); }
 </style>
@@ -640,6 +795,25 @@ async function onDrop(folderId, ev) {
 }
 .mf-menu button:hover { background: var(--bg); }
 .mf-menu button.is-danger { color: var(--error); }
+
+/* "Mover para…" — cabeçalho recolhível + árvore de pastas */
+.mf-menu__toggle { display: flex !important; align-items: center; justify-content: space-between; gap: 8px; }
+.mf-menu__chev { color: var(--text2); font-size: 10px; }
+.mf-menu__node { display: flex !important; align-items: center; gap: 6px; }
+.mf-menu__node:disabled { opacity: .5; cursor: default; }
+.mf-menu__node:disabled:hover { background: none; }
+.mf-menu__plus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  flex-shrink: 0;
+  color: var(--text2);
+  font-weight: 700;
+}
+.mf-menu__plus.is-clickable { cursor: pointer; border: 1px solid var(--border); border-radius: 3px; line-height: 1; }
+.mf-menu__plus.is-clickable:hover { border-color: var(--accent); color: var(--text); }
+.mf-menu__aqui { margin-left: auto; font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
 .mf-menu__sep { height: 1px; background: var(--border); margin: 4px 0; }
 .mf-menu__label { font-size: 10px; text-transform: uppercase; color: var(--text2); padding: 4px 10px; letter-spacing: .5px; }
 </style>
