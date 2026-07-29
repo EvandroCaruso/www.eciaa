@@ -81,6 +81,27 @@ const selectedNode = computed(() => {
 const report = computed(() => validate(graph.value, typesByKey.value))
 
 /**
+ * Um único botão no slot principal, com três estados (decisão do Evandro, 29/07).
+ * A regra: o slot mostra a ação mais importante do momento.
+ *
+ *   não publicado ................ Publicar
+ *   publicado, com pendência ..... Publicar alterações
+ *   publicado e em dia ........... Despublicar
+ *
+ * "Pendência" é tanto o que está na tela e não foi salvo (dirty) quanto o
+ * rascunho salvo que ainda não foi ao ar (has_draft) — nos dois casos o que está
+ * rodando difere do que se está editando, e publicar é o que resolve.
+ * Despublicar um fluxo COM pendência continua possível pelo menu ⋮ da lista.
+ */
+const pendente = computed(() => dirty.value || flowMeta.value.has_draft)
+
+const acaoPublicacao = computed(() => {
+  if (!flowMeta.value.is_published) return { modo: 'publicar', label: 'Publicar', primary: true }
+  if (pendente.value) return { modo: 'publicar', label: 'Publicar alterações', primary: true }
+  return { modo: 'despublicar', label: 'Despublicar', primary: false }
+})
+
+/**
  * Caminho raiz→pasta do fluxo, para o cabeçalho. Guard contra ciclo no banco.
  * Vazio quando o fluxo está na raiz — ou quando o backend não mandou folder_id,
  * caso em que o cabeçalho mostra só "Todos os fluxos" e o Voltar cai na pasta
@@ -730,16 +751,16 @@ onBeforeUnmount(() => {
         {{ report.errors.length }} problema(s)
       </span>
       <button class="mf-btn" @click="exportJson">Exportar JSON</button>
-      <button
-        v-if="flowMeta.is_published"
-        class="mf-btn"
-        :disabled="readonly || saving"
-        @click="askUnpublish"
-      >Despublicar</button>
       <button class="mf-btn" :disabled="readonly || saving || !dirty" @click="save">
         {{ saving ? 'Salvando…' : 'Salvar' }}
       </button>
-      <button class="mf-btn mf-btn--primary" :disabled="readonly || saving" @click="askPublish">Publicar</button>
+      <!-- um só botão, três estados — ver `acaoPublicacao` -->
+      <button
+        class="mf-btn"
+        :class="{ 'mf-btn--primary': acaoPublicacao.primary }"
+        :disabled="readonly || saving"
+        @click="acaoPublicacao.modo === 'publicar' ? askPublish() : askUnpublish()"
+      >{{ acaoPublicacao.label }}</button>
     </header>
 
     <div class="mf-body">
