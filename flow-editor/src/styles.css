@@ -101,6 +101,19 @@ body {
 .mf-badge--ok { color: var(--success); border-color: var(--success); }
 .mf-badge--draft { color: var(--warn); border-color: var(--warn); }
 
+/* ---------- situação: dois controles independentes ----------
+   badge  = publicado / não publicado (está no ar?)
+   ponto  = verde: o que se vê é a última versão salva
+            amarelo: o que se vê ainda não foi salvo
+   Decisão de Evandro, 2026-07-29 — mesma leitura do n8n. */
+
+.mf-status { display: inline-flex; align-items: center; gap: 8px; }
+.mf-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.mf-dot.is-ok { background: var(--success); }
+.mf-dot.is-warn { background: var(--warn); }
+
+.mf-crumb__sep { opacity: .5; }
+
 /* ---------- layout ---------- */
 
 .mf-app { display: flex; flex-direction: column; height: 100%; }

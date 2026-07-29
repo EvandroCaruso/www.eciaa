@@ -4,7 +4,7 @@
  * (bloqueados ou feios dentro do iframe do Chatwoot).
  * Modo "prompt" quando recebe `label`; modo "confirm" quando não recebe.
  */
-import { ref, watch, nextTick } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -14,25 +14,35 @@ const props = defineProps({
   modelValue: { type: String, default: '' },
   placeholder: { type: String, default: '' },
   confirmLabel: { type: String, default: 'Confirmar' },
-  danger: { type: Boolean, default: false }
+  danger: { type: Boolean, default: false },
+  // Erro devolvido pelo pai (ex.: nome de fluxo já existe). O modal fica ABERTO
+  // para o usuário corrigir — fechar e mandar um toast obrigaria a redigitar tudo.
+  error: { type: String, default: '' }
 })
 
 const emit = defineEmits(['confirm', 'cancel'])
 
 const draft = ref('')
 const input = ref(null)
+const dismissedError = ref(false)
+
+// Some assim que ele começa a corrigir; volta se o pai recusar de novo.
+const shownError = computed(() => (dismissedError.value ? '' : props.error))
 
 watch(
   () => props.open,
   async (isOpen) => {
     if (!isOpen) return
     draft.value = props.modelValue
+    dismissedError.value = false
     await nextTick()
     input.value?.focus()
     input.value?.select()
   },
   { immediate: true }
 )
+
+watch(() => props.error, () => { dismissedError.value = false })
 
 function confirm() {
   if (props.label && !draft.value.trim()) return
@@ -52,9 +62,12 @@ function confirm() {
           ref="input"
           v-model="draft"
           class="mf-input"
+          :class="{ 'is-invalid': shownError }"
           :placeholder="placeholder"
+          @input="dismissedError = true"
           @keydown.enter.prevent="confirm"
         />
+        <p v-if="shownError" class="mf-modal__error">{{ shownError }}</p>
       </div>
 
       <div class="mf-modal__actions">
@@ -69,3 +82,8 @@ function confirm() {
     </div>
   </div>
 </template>
+
+<style scoped>
+.mf-modal__error { color: var(--error); font-size: 12px; margin: 6px 0 0; line-height: 1.4; }
+.is-invalid { border-color: var(--error) !important; }
+</style>

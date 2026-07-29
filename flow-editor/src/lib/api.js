@@ -17,6 +17,7 @@
  */
 
 import { createEmptyGraph } from '../core/graph.js'
+import { isFlowNameTaken, uniqueFlowName } from '../core/names.js'
 
 export function getContext() {
   const ctx = typeof window !== 'undefined' ? window.__MSGFLOW_CTX__ : null
@@ -115,7 +116,9 @@ const mockDb = {
   seq: 3,
   folders: [
     { id: 1, parent_id: null, folder_name: 'Boas-vindas', sort_order: 0 },
-    { id: 2, parent_id: null, folder_name: 'Cobrança', sort_order: 1 }
+    { id: 2, parent_id: null, folder_name: 'Cobrança', sort_order: 1 },
+    // subpasta de propósito: é o caso que o breadcrumb antigo não mostrava
+    { id: 3, parent_id: 1, folder_name: 'Sub-Pasta', sort_order: 0 }
   ],
   flows: [
     {
@@ -167,6 +170,10 @@ async function mockCall(action, p) {
     }
 
     case 'create': {
+      // espelha a regra do backend: nome é único no cliente inteiro
+      if (isFlowNameTaken(p.flow_name, flows.filter((f) => f.is_active))) {
+        throw new Error('Já existe um fluxo com esse nome.')
+      }
       const id = ++mockDb.seq
       const f = {
         id, folder_id: p.folder_id ?? null, flow_name: p.flow_name,
@@ -196,6 +203,9 @@ async function mockCall(action, p) {
 
     case 'rename': {
       const f = byId(p.flow_id)
+      if (isFlowNameTaken(p.flow_name, flows.filter((x) => x.is_active), f.id)) {
+        throw new Error('Já existe outro fluxo com esse nome.')
+      }
       f.flow_name = p.flow_name
       if (p.description !== undefined) f.description = p.description
       return { ok: true }
@@ -204,9 +214,11 @@ async function mockCall(action, p) {
     case 'clone': {
       const src = byId(p.flow_id)
       const id = ++mockDb.seq
+      // duplicar nunca falha por nome ocupado: o usuário não escolheu nome
+      const nome = uniqueFlowName(p.flow_name || src.flow_name, flows.filter((f) => f.is_active))
       const f = {
         ...JSON.parse(JSON.stringify(src)), id,
-        flow_name: `${src.flow_name} (cópia)`, flow_slug: slugify(`${src.flow_name}-copia-${id}`),
+        flow_name: nome, flow_slug: slugify(`${nome}-${id}`),
         version: 0, graph_draft: src.graph || src.graph_draft, graph: null,
         updated_at: new Date().toISOString()
       }

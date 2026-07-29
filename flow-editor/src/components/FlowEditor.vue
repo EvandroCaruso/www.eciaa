@@ -26,7 +26,11 @@ import {
   copyNodes, pasteNodes, toVueFlow, fromVueFlow, validate, findNode, outputIndexFrom
 } from '../core/graph.js'
 
-const props = defineProps({ flowId: { type: [Number, String], required: true } })
+const props = defineProps({
+  flowId: { type: [Number, String], required: true },
+  // árvore de pastas, para montar o caminho do fluxo no cabeçalho
+  folders: { type: Array, default: () => [] }
+})
 const emit = defineEmits(['back', 'toast'])
 
 const nodeTypesComponents = { msgflow: markRaw(MsgFlowNode) }
@@ -39,7 +43,8 @@ const { onConnect, onNodeDragStop, onNodeClick, onPaneClick, screenToFlowCoordin
 
 const loading = ref(true)
 const saving = ref(false)
-const flowMeta = ref({ flow_name: '', version: 0, has_draft: false })
+// folder_id undefined = o backend não informou; null = raiz
+const flowMeta = ref({ flow_name: '', version: 0, has_draft: false, folder_id: undefined })
 const graph = ref(createEmptyGraph())
 const typesList = ref([])
 const nodes = ref([])
@@ -63,6 +68,25 @@ const selectedNode = computed(() => {
 })
 
 const report = computed(() => validate(graph.value, typesByKey.value))
+
+/**
+ * Caminho raiz→pasta do fluxo, para o cabeçalho. Guard contra ciclo no banco.
+ * Vazio quando o fluxo está na raiz — ou quando o backend não mandou folder_id,
+ * caso em que o cabeçalho mostra só "Todos os fluxos" e o Voltar cai na pasta
+ * onde a lista já estava (ninguém é levado para o lugar errado).
+ */
+const folderPath = computed(() => {
+  const byId = Object.fromEntries(props.folders.map((f) => [f.id, f]))
+  const out = []
+  let cur = flowMeta.value.folder_id == null ? null : byId[flowMeta.value.folder_id]
+  let guard = 0
+  while (cur && guard < 50) {
+    out.unshift(cur)
+    cur = cur.parent_id == null ? null : byId[cur.parent_id]
+    guard += 1
+  }
+  return out
+})
 
 function specDe(nome) {
   const n = findNode(graph.value, nome)
@@ -98,7 +122,12 @@ async function load() {
     typesList.value = (typesRes.node_types || []).filter((t) => t.is_enabled !== false)
 
     const f = flowRes.flow
-    flowMeta.value = { flow_name: f.flow_name, version: f.version, has_draft: !!f.graph_draft }
+    flowMeta.value = {
+      flow_name: f.flow_name,
+      version: f.version,
+      has_draft: !!f.graph_draft,
+      folder_id: f.folder_id === undefined ? undefined : (f.folder_id ?? null)
+    }
     graph.value = f.graph_draft || f.graph || createEmptyGraph()
     lastSaved.value = JSON.stringify(graph.value)
 
@@ -498,6 +527,9 @@ async function doPublish() {
   dialog.value = { ...dialog.value, open: false }
   saving.value = true
   try {
+    // Publicar SALVA o que está na tela: manda o graph corrente e o backend o
+    // grava como versão publicada, zerando o rascunho. Não existe publicar uma
+    // coisa e ficar com outra salva — por isso o ponto fica verde ao final.
     const res = await call('publish', { flow_id: props.flowId, graph: graph.value })
     lastSaved.value = JSON.stringify(graph.value)
     flowMeta.value.version = res.version
@@ -521,7 +553,15 @@ function exportJson() {
   URL.revokeObjectURL(url)
 }
 
-function goBack() {
+/**
+ * Sair do editor para uma pasta. O Voltar usa a pasta DO FLUXO (item 7); o
+ * caminho no cabeçalho usa a pasta clicada. Os dois passam pelo mesmo guarda de
+ * alterações não salvas — senão o breadcrumb virava um atalho para perder tudo.
+ */
+const saidaPendente = ref(undefined)
+
+function leaveTo(folderId) {
+  saidaPendente.value = folderId
   if (dirty.value) {
     dialog.value = {
       open: true, mode: 'leave', title: 'Sair sem salvar?',
@@ -530,14 +570,18 @@ function goBack() {
     }
     return
   }
-  emit('back')
+  emit('back', folderId)
+}
+
+function goBack() {
+  leaveTo(flowMeta.value.folder_id)
 }
 
 function onDialogConfirm() {
   const mode = dialog.value.mode
   dialog.value = { ...dialog.value, open: false }
   if (mode === 'publish') doPublish()
-  else if (mode === 'leave') emit('back')
+  else if (mode === 'leave') emit('back', saidaPendente.value)
 }
 
 onMounted(() => {
@@ -554,11 +598,35 @@ onBeforeUnmount(() => {
 <template>
   <div class="mf-editor">
     <header class="mf-topbar">
-      <button class="back-btn" @click="goBack">← Voltar</button>
-      <h2 class="mf-topbar__title">{{ flowMeta.flow_name || 'Fluxo' }}</h2>
-      <span v-if="dirty" class="mf-badge mf-badge--draft">alterações não salvas</span>
-      <span v-else-if="flowMeta.version > 0" class="mf-badge mf-badge--ok">v{{ flowMeta.version }}</span>
-      <span v-else class="mf-badge">não publicado</span>
+      <button class="back-btn" title="Voltar para a pasta do fluxo" @click="goBack">← Voltar</button>
+
+      <!-- caminho até o fluxo, cada pasta clicável, terminando no nome dele -->
+      <nav class="mf-editor__crumbs">
+        <a href="#" @click.prevent="leaveTo(null)">Todos os fluxos</a>
+        <template v-for="f in folderPath" :key="f.id">
+          <span class="mf-crumb__sep">/</span>
+          <a href="#" @click.prevent="leaveTo(f.id)">{{ f.folder_name }}</a>
+        </template>
+        <span class="mf-crumb__sep">/</span>
+        <h2 class="mf-topbar__title">{{ flowMeta.flow_name || 'Fluxo' }}</h2>
+      </nav>
+
+      <!--
+        Dois controles independentes (decisão de 2026-07-29):
+          badge = está no ar ou não · ponto = o que está na tela está salvo ou não.
+      -->
+      <span class="mf-status">
+        <span
+          class="mf-dot"
+          :class="dirty ? 'is-warn' : 'is-ok'"
+          :title="dirty
+            ? 'O que está na tela ainda não foi salvo.'
+            : 'O que está na tela é a última versão salva.'"
+        ></span>
+        <span class="mf-badge" :class="{ 'mf-badge--ok': flowMeta.version > 0 }">
+          {{ flowMeta.version > 0 ? 'Publicado' : 'Não publicado' }}
+        </span>
+      </span>
 
       <span class="mf-topbar__spacer"></span>
 
@@ -645,6 +713,18 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .mf-editor { display: flex; flex-direction: column; height: 100%; }
+
+/* caminho no cabeçalho: pastas clicáveis + nome do fluxo em destaque */
+.mf-editor__crumbs { display: flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap; }
+.mf-editor__crumbs a {
+  color: var(--text2);
+  text-decoration: none;
+  font-size: 13px;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+.mf-editor__crumbs a:hover { color: var(--accent2); background: var(--surface2); }
+.mf-editor__crumbs .mf-topbar__title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mf-canvas__overlay {
   position: absolute;
   inset: 0;
