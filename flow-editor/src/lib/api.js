@@ -159,6 +159,9 @@ async function mockCall(action, p) {
         flows: flows.filter((f) => f.is_active).map((f) => ({
           id: f.id, folder_id: f.folder_id, flow_name: f.flow_name, flow_slug: f.flow_slug,
           description: f.description, version: f.version,
+          // publicado é sobre o GRAFO estar no ar, não sobre já ter tido versão:
+          // despublicar zera o graph e preserva o histórico (version segue > 0)
+          is_published: f.graph !== null,
           has_draft: f.graph_draft !== null, updated_at: f.updated_at
         }))
       }
@@ -199,6 +202,16 @@ async function mockCall(action, p) {
       f.version += 1
       f.updated_at = new Date().toISOString()
       return { ok: true, version: f.version }
+    }
+
+    case 'unpublish': {
+      const f = byId(p.flow_id)
+      if (f.graph === null) throw new Error('Este fluxo não está publicado.')
+      // o que estava no ar vira rascunho: despublicar não pode perder trabalho
+      f.graph_draft = f.graph_draft || f.graph
+      f.graph = null
+      f.updated_at = new Date().toISOString()
+      return { ok: true }
     }
 
     case 'rename': {

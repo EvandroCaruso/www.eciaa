@@ -18,6 +18,8 @@ const screen = ref('list')
 const currentFlowId = ref(null)
 const currentFolder = ref(null)
 const folders = ref([])
+// os demais fluxos do cliente, para o rename inline do editor validar nome único
+const flows = ref([])
 // ordenação da lista: mesma razão da pasta — sobrevive à ida e volta ao editor
 const sortBy = ref('name')
 const sortDir = ref('asc')
@@ -62,6 +64,7 @@ function backToList(folderId) {
       @open="openFlow"
       @toast="showToast"
       @folders="folders = $event"
+      @flows="flows = $event"
     />
 
     <FlowEditor
@@ -69,6 +72,7 @@ function backToList(folderId) {
       :key="currentFlowId"
       :flow-id="currentFlowId"
       :folders="folders"
+      :flows="flows"
       @back="backToList"
       @toast="showToast"
     />

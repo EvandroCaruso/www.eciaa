@@ -21,7 +21,7 @@ const props = defineProps({
   sortBy: { type: String, default: 'name' },   // 'name' | 'status' | 'updated'
   sortDir: { type: String, default: 'asc' }
 })
-const emit = defineEmits(['open', 'toast', 'update:folderId', 'update:sortBy', 'update:sortDir', 'folders'])
+const emit = defineEmits(['open', 'toast', 'update:folderId', 'update:sortBy', 'update:sortDir', 'folders', 'flows'])
 
 const loading = ref(true)
 const folders = ref([])
@@ -88,7 +88,7 @@ function pathLabel(folderId) {
 
 /** Situação como número, para ordenar: 0 = não publicado, 1 = publicado. */
 function rankSituacao(f) {
-  return f.version > 0 ? 1 : 0
+  return f.is_published ? 1 : 0
 }
 
 function comparar(a, b) {
@@ -128,8 +128,9 @@ async function load() {
     const data = await call('list')
     folders.value = data.folders || []
     flows.value = data.flows || []
-    // o editor precisa da árvore para montar o caminho no título
+    // o editor precisa da árvore para o caminho, e da lista para o nome único
     emit('folders', folders.value)
+    emit('flows', flows.value)
     // pasta apagada por outra sessão não pode deixar a tela num limbo vazio
     if (currentFolder.value !== null && !foldersById.value[currentFolder.value]) {
       currentFolder.value = null
@@ -175,6 +176,13 @@ function askDeleteFlow(flow) {
     message: `O fluxo "${flow.flow_name}" deixa de aparecer na lista. O histórico de versões é preservado.`
   })
 }
+function askUnpublish(flow) {
+  closeMenu()
+  ask({
+    mode: 'unpublish', title: 'Despublicar fluxo', confirmLabel: 'Despublicar', danger: true, target: flow,
+    message: `"${flow.flow_name}" sai do ar e deixa de ser executado. O conteúdo não se perde: vira rascunho, e o histórico de versões fica intacto.`
+  })
+}
 function askDeleteFolder(folder) {
   ask({
     mode: 'delete-folder', title: 'Excluir pasta', danger: true, confirmLabel: 'Excluir', target: folder,
@@ -217,6 +225,10 @@ async function onDialogConfirm(value) {
       await call('delete', { flow_id: target.id })
       await load()
       emit('toast', { type: 'ok', text: 'Fluxo excluído.' })
+    } else if (mode === 'unpublish') {
+      await call('unpublish', { flow_id: target.id })
+      await load()
+      emit('toast', { type: 'ok', text: `"${target.flow_name}" saiu do ar.` })
     } else if (mode === 'delete-folder') {
       await call('folder_delete', { folder_id: target.id })
       await load()
@@ -607,8 +619,8 @@ async function onDrop(folderId, ev) {
                     ? 'Há alterações salvas em rascunho que ainda não foram publicadas.'
                     : 'Não há alterações pendentes.'"
                 ></span>
-                <span class="mf-badge" :class="{ 'mf-badge--ok': flow.version > 0 }">
-                  {{ flow.version > 0 ? 'Publicado' : 'Não publicado' }}
+                <span class="mf-badge" :class="{ 'mf-badge--ok': flow.is_published }">
+                  {{ flow.is_published ? 'Publicado' : 'Não publicado' }}
                 </span>
               </span>
             </td>
@@ -641,6 +653,7 @@ async function onDrop(folderId, ev) {
           <button @click="closeMenu(); emit('open', flow.id)">Abrir</button>
           <button v-if="crud.create" @click="cloneFlow(flow)">Duplicar</button>
           <button v-if="crud.update" @click="closeMenu(); askRenameFlow(flow)">Renomear</button>
+          <button v-if="crud.update && flow.is_published" @click="askUnpublish(flow)">Despublicar</button>
           <button @click="exportFlow(flow)">Exportar JSON</button>
           <template v-if="crud.update">
             <div class="mf-menu__sep"></div>

@@ -7,7 +7,7 @@
  * arrasto de posição escreve direto no graph, para não recriar o array no meio
  * da interação e cortar o movimento.
  */
-import { ref, computed, onMounted, onBeforeUnmount, markRaw, provide } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount, markRaw, provide } from 'vue'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
@@ -20,6 +20,7 @@ import PropertiesPanel from './PropertiesPanel.vue'
 import ModalDialog from './ModalDialog.vue'
 
 import { call, crud } from '../lib/api.js'
+import { isFlowNameTaken } from '../core/names.js'
 import { writeClip, readClip, hasClip } from '../lib/storage.js'
 import {
   createEmptyGraph, addNode, deleteNode, renameNode, connect, disconnect,
@@ -29,7 +30,10 @@ import {
 const props = defineProps({
   flowId: { type: [Number, String], required: true },
   // árvore de pastas, para montar o caminho do fluxo no cabeçalho
-  folders: { type: Array, default: () => [] }
+  folders: { type: Array, default: () => [] },
+  // demais fluxos do cliente: o rename inline precisa deles para aplicar a
+  // mesma regra de nome único que a lista aplica
+  flows: { type: Array, default: () => [] }
 })
 const emit = defineEmits(['back', 'toast'])
 
@@ -44,7 +48,14 @@ const { onConnect, onNodeDragStop, onNodeClick, onPaneClick, screenToFlowCoordin
 const loading = ref(true)
 const saving = ref(false)
 // folder_id undefined = o backend não informou; null = raiz
-const flowMeta = ref({ flow_name: '', version: 0, has_draft: false, folder_id: undefined })
+// is_published olha o GRAFO no ar, não a versão: despublicar preserva o histórico
+const flowMeta = ref({ flow_name: '', version: 0, is_published: false, has_draft: false, folder_id: undefined })
+
+// rename inline no cabeçalho, sem sair da tela de edição
+const editandoNome = ref(false)
+const nomeDraft = ref('')
+const nomeErro = ref('')
+const nomeInput = ref(null)
 const graph = ref(createEmptyGraph())
 const typesList = ref([])
 const nodes = ref([])
@@ -125,6 +136,7 @@ async function load() {
     flowMeta.value = {
       flow_name: f.flow_name,
       version: f.version,
+      is_published: !!f.graph,
       has_draft: !!f.graph_draft,
       folder_id: f.folder_id === undefined ? undefined : (f.folder_id ?? null)
     }
@@ -533,12 +545,74 @@ async function doPublish() {
     const res = await call('publish', { flow_id: props.flowId, graph: graph.value })
     lastSaved.value = JSON.stringify(graph.value)
     flowMeta.value.version = res.version
+    flowMeta.value.is_published = true
     flowMeta.value.has_draft = false
     emit('toast', { type: 'ok', text: `Publicado como v${res.version}.` })
   } catch (e) {
     emit('toast', { type: 'error', text: e.message })
   } finally {
     saving.value = false
+  }
+}
+
+function askUnpublish() {
+  dialog.value = {
+    open: true, mode: 'unpublish', title: 'Despublicar fluxo',
+    message: 'O fluxo sai do ar e deixa de ser executado. O conteúdo não se perde: vira rascunho, e o histórico de versões fica intacto.',
+    confirmLabel: 'Despublicar', danger: true
+  }
+}
+
+async function doUnpublish() {
+  saving.value = true
+  try {
+    await call('unpublish', { flow_id: props.flowId })
+    // o que estava no ar virou rascunho — o que está na tela continua igual,
+    // então o ponto não muda; o que muda é o badge.
+    flowMeta.value.is_published = false
+    flowMeta.value.has_draft = true
+    emit('toast', { type: 'ok', text: 'Fluxo despublicado. Ele saiu do ar.' })
+  } catch (e) {
+    emit('toast', { type: 'error', text: e.message })
+  } finally {
+    saving.value = false
+  }
+}
+
+// ---------- nome do fluxo, editável no próprio cabeçalho ----------
+
+async function comecarEdicaoNome() {
+  if (readonly.value) return
+  nomeDraft.value = flowMeta.value.flow_name
+  nomeErro.value = ''
+  editandoNome.value = true
+  await nextTick()
+  nomeInput.value?.focus()
+  nomeInput.value?.select()
+}
+
+function cancelarEdicaoNome() {
+  editandoNome.value = false
+  nomeErro.value = ''
+}
+
+async function salvarNome() {
+  const novo = nomeDraft.value.trim()
+  if (!novo || novo === flowMeta.value.flow_name) return cancelarEdicaoNome()
+
+  // mesma regra da lista: nome único no cliente inteiro
+  if (isFlowNameTaken(novo, props.flows, Number(props.flowId))) {
+    nomeErro.value = 'Já existe outro fluxo com esse nome.'
+    return
+  }
+  try {
+    await call('rename', { flow_id: props.flowId, flow_name: novo })
+    flowMeta.value.flow_name = novo
+    editandoNome.value = false
+    nomeErro.value = ''
+    emit('toast', { type: 'ok', text: 'Nome alterado.' })
+  } catch (e) {
+    nomeErro.value = e.message
   }
 }
 
@@ -581,6 +655,7 @@ function onDialogConfirm() {
   const mode = dialog.value.mode
   dialog.value = { ...dialog.value, open: false }
   if (mode === 'publish') doPublish()
+  else if (mode === 'unpublish') doUnpublish()
   else if (mode === 'leave') emit('back', saidaPendente.value)
 }
 
@@ -608,8 +683,29 @@ onBeforeUnmount(() => {
           <a href="#" @click.prevent="leaveTo(f.id)">{{ f.folder_name }}</a>
         </template>
         <span class="mf-crumb__sep">/</span>
-        <h2 class="mf-topbar__title">{{ flowMeta.flow_name || 'Fluxo' }}</h2>
+
+        <!-- clicar no nome edita ali mesmo; Enter salva, Esc desiste -->
+        <input
+          v-if="editandoNome"
+          ref="nomeInput"
+          v-model="nomeDraft"
+          class="mf-input mf-nome-input"
+          :class="{ 'is-invalid': nomeErro }"
+          :title="nomeErro"
+          @keydown.enter.prevent="salvarNome"
+          @keydown.esc.prevent="cancelarEdicaoNome"
+          @blur="salvarNome"
+        />
+        <h2
+          v-else
+          class="mf-topbar__title"
+          :class="{ 'is-editavel': !readonly }"
+          :title="readonly ? '' : 'Clique para renomear'"
+          @click="comecarEdicaoNome"
+        >{{ flowMeta.flow_name || 'Fluxo' }}</h2>
       </nav>
+
+      <span v-if="nomeErro" class="mf-badge" style="color:var(--error);border-color:var(--error)">{{ nomeErro }}</span>
 
       <!--
         Dois controles independentes (decisão de 2026-07-29):
@@ -623,8 +719,8 @@ onBeforeUnmount(() => {
             ? 'O que está na tela ainda não foi salvo.'
             : 'O que está na tela é a última versão salva.'"
         ></span>
-        <span class="mf-badge" :class="{ 'mf-badge--ok': flowMeta.version > 0 }">
-          {{ flowMeta.version > 0 ? 'Publicado' : 'Não publicado' }}
+        <span class="mf-badge" :class="{ 'mf-badge--ok': flowMeta.is_published }">
+          {{ flowMeta.is_published ? 'Publicado' : 'Não publicado' }}
         </span>
       </span>
 
@@ -634,8 +730,14 @@ onBeforeUnmount(() => {
         {{ report.errors.length }} problema(s)
       </span>
       <button class="mf-btn" @click="exportJson">Exportar JSON</button>
+      <button
+        v-if="flowMeta.is_published"
+        class="mf-btn"
+        :disabled="readonly || saving"
+        @click="askUnpublish"
+      >Despublicar</button>
       <button class="mf-btn" :disabled="readonly || saving || !dirty" @click="save">
-        {{ saving ? 'Salvando…' : 'Salvar rascunho' }}
+        {{ saving ? 'Salvando…' : 'Salvar' }}
       </button>
       <button class="mf-btn mf-btn--primary" :disabled="readonly || saving" @click="askPublish">Publicar</button>
     </header>
@@ -725,6 +827,10 @@ onBeforeUnmount(() => {
 }
 .mf-editor__crumbs a:hover { color: var(--accent2); background: var(--surface2); }
 .mf-editor__crumbs .mf-topbar__title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mf-topbar__title.is-editavel { cursor: text; padding: 2px 6px; border-radius: 5px; border: 1px solid transparent; }
+.mf-topbar__title.is-editavel:hover { border-color: var(--border); background: var(--surface2); }
+.mf-nome-input { font-size: 16px; font-weight: 600; padding: 2px 6px; min-width: 220px; }
+.mf-nome-input.is-invalid { border-color: var(--error); }
 .mf-canvas__overlay {
   position: absolute;
   inset: 0;
