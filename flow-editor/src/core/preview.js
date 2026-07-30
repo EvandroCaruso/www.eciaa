@@ -7,7 +7,6 @@
  * canvas e painel de propriedades importam daqui — nenhum dos dois recalcula.
  */
 
-import { precisaExecutorNovo, buildMirrors } from './subblocks.js'
 
 const LIMITE = 42
 
@@ -41,29 +40,19 @@ export function resumoSubBloco(bloco, subTypes = []) {
   }
 }
 
-/** Resumo do bloco inteiro, para o card do canvas. */
-export function resumoBloco(parameters, subTypes = []) {
+/** Uma linha por parte, na ordem — é o que o card do canvas desenha. */
+export function linhasDoBloco(parameters, subTypes = []) {
   const blocks = (parameters && parameters.blocks) || []
-  if (!blocks.length) return ''
-  return blocks.map((b) => resumoSubBloco(b, subTypes)).join(' · ')
+  return blocks.map((b) => resumoSubBloco(b, subTypes))
 }
 
 /**
- * Aviso de runtime, também com definição única.
+ * Resumo do bloco inteiro para o card do canvas.
  *
- * São dois casos diferentes, e dizer os dois com a mesma frase seria impreciso:
- *  - o bloco não tem texto nenhum → o runtime atual não envia NADA dele;
- *  - o bloco tem texto e também mídia → sai só o texto.
- *
- * O que sobrevive hoje são os espelhos (`text` e `delay_seconds`); a pausa
- * acontece de verdade, só o "digitando" é que ainda não.
+ * ⚠️ Uma parte POR LINHA, não separadas por " · ": com cinco partes a linha
+ * única virava um parágrafo ilegível dentro do card. O card cresce junto (o CSS
+ * usa `white-space: pre-line`).
  */
-export function avisoRuntime(parameters) {
-  const blocks = (parameters && parameters.blocks) || []
-  if (!blocks.length || !precisaExecutorNovo(blocks)) return null
-
-  const { text } = buildMirrors(blocks)
-  return text
-    ? 'O envio atual usa só o texto deste bloco; mídia e contato ainda não são enviados.'
-    : 'O envio atual não manda nada deste bloco: ele não tem texto, e mídia e contato ainda não são enviados.'
+export function resumoBloco(parameters, subTypes = []) {
+  return linhasDoBloco(parameters, subTypes).join('\n')
 }

@@ -1,8 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   newSubBlock, addSubBlock, updateSubBlock, removeSubBlock, duplicateSubBlock,
-  moveSubBlock, buildMirrors, precisaExecutorNovo, normalizeParameters, withBlocks,
-  subTypeFor
+  moveSubBlock, buildMirrors, normalizeParameters, withBlocks, subTypeFor
 } from './subblocks.js'
 
 const SUB_TYPES = [
@@ -111,27 +110,12 @@ describe('buildMirrors — o que o Executor v0 vai ler', () => {
     expect(buildMirrors([{ kind: 'text', text: '   ' }, { kind: 'text', text: 'ok' }]).text).toBe('ok')
   })
 
-  it('bloco só de mídia produz espelho VAZIO — é o buraco que a tela precisa avisar', () => {
-    const m = buildMirrors([{ kind: 'image', asset_id: 1 }])
-    expect(m.text).toBe('')
-    expect(precisaExecutorNovo([{ kind: 'image', asset_id: 1 }])).toBe(true)
+  it('bloco só de mídia produz espelho VAZIO', () => {
+    expect(buildMirrors([{ kind: 'image', asset_id: 1 }]).text).toBe('')
   })
 
-  it('bloco só de texto não precisa do executor novo', () => {
-    expect(precisaExecutorNovo([{ kind: 'text', text: 'oi' }])).toBe(false)
-  })
 
-  it('atraso sobrevive ao espelho: não exige executor novo', () => {
-    // delay_seconds é escrito e o Executor v0 respeita a pausa; só o "digitando" fica de fora
-    expect(precisaExecutorNovo([{ kind: 'delay', seconds: 3, typing: true }])).toBe(false)
-    expect(precisaExecutorNovo([{ kind: 'text', text: 'oi' }, { kind: 'delay', seconds: 3 }])).toBe(false)
-  })
 
-  it('qualquer mídia ou contato exige', () => {
-    for (const kind of ['image', 'video', 'audio', 'file', 'contact']) {
-      expect(precisaExecutorNovo([{ kind }])).toBe(true)
-    }
-  })
 })
 
 describe('normalizeParameters — abrir bloco antigo (typeVersion 1)', () => {

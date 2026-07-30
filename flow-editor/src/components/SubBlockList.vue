@@ -14,14 +14,16 @@
  * tecla como o resto do painel: com a pílula pintada e a régua, gravar por tecla
  * fica barulhento e enche o histórico de rascunho.
  */
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   addSubBlock, updateSubBlock, removeSubBlock, duplicateSubBlock, moveSubBlock,
   normalizeParameters, withBlocks, subTypesFrom
 } from '../core/subblocks.js'
-import { resumoSubBloco, avisoRuntime } from '../core/preview.js'
+import { resumoSubBloco } from '../core/preview.js'
+import { PAISES, PAIS_PADRAO, formatarNacional, paraE164, deE164, telefoneValido } from '../core/phone.js'
 import RichTextField from './RichTextField.vue'
 import AssetField from './AssetField.vue'
+import ModalDialog from './ModalDialog.vue'
 
 const props = defineProps({
   field: { type: Object, required: true },
@@ -35,11 +37,16 @@ const subTypes = computed(() => subTypesFrom(props.field))
 // Ler já normaliza: um bloco `typeVersion: 1` aparece como sequência sem que
 // nada seja gravado. Quem persiste é o salvar do fluxo.
 const blocks = computed(() => normalizeParameters(props.parameters).blocks)
-const aviso = computed(() => avisoRuntime({ blocks: blocks.value }))
 
 const editandoId = ref(null)
 const rascunho = ref(null)
 const escolhendo = ref(false)
+const paraExcluir = ref(null)
+
+// Telefone vive em dois formatos: E.164 no dado (é o que o WhatsApp entende) e
+// país + número nacional na tela. Estes refs são só a face visível.
+const telPais = ref(PAIS_PADRAO)
+const telNacional = ref('')
 
 function specDe(kind) {
   return subTypes.value.find((s) => s.kind === kind) || { fields: [], label: kind, icon: '•' }
@@ -59,10 +66,24 @@ function adicionar(subType) {
 function abrir(b) {
   editandoId.value = b.id
   rascunho.value = JSON.parse(JSON.stringify(b))
+  if (b.kind === 'contact') {
+    const { code, nacional } = deE164(b.phone || '', PAIS_PADRAO)
+    telPais.value = code
+    telNacional.value = formatarNacional(nacional, code)
+  }
 }
 
 function salvar() {
-  aplicar(updateSubBlock(blocks.value, editandoId.value, rascunho.value))
+  const r = { ...rascunho.value }
+
+  // Usar o número conectado: os campos de telefone somem do dado. O número real
+  // só existe no DISPATCH — o mesmo fluxo pode sair por vários canais, e gravar
+  // um número aqui seria fixar hoje algo que só se sabe na hora do envio.
+  if (r.kind === 'contact' && r.use_connected_number === true) {
+    r.phone = ''
+  }
+
+  aplicar(updateSubBlock(blocks.value, editandoId.value, r))
   editandoId.value = null
   rascunho.value = null
 }
@@ -80,7 +101,14 @@ function mover(id, dir) {
   aplicar(moveSubBlock(blocks.value, id, dir))
 }
 
-function excluir(id) {
+/** Excluir NUNCA é direto: passa pelo modal, como todo destrutivo deste editor. */
+function pedirExclusao(b) {
+  paraExcluir.value = { id: b.id, resumo: resumoSubBloco(b, subTypes.value) }
+}
+
+function confirmarExclusao() {
+  const id = paraExcluir.value.id
+  paraExcluir.value = null
   if (editandoId.value === id) cancelar()
   aplicar(removeSubBlock(blocks.value, id))
 }
@@ -90,10 +118,32 @@ function forasteiro(campo, valor) {
   return campo.type === 'range' && Number(valor) > Number(campo.max)
 }
 
-function ehDesabilitado(campo) {
-  // No cartão de contato, usar o número conectado dispensa digitar telefone.
-  return campo.key === 'phone' && rascunho.value && rascunho.value.use_connected_number === true
+const usaNumeroConectado = computed(
+  () => rascunho.value && rascunho.value.use_connected_number === true
+)
+
+function onTelefone(valor) {
+  telNacional.value = formatarNacional(valor, telPais.value)
+  rascunho.value.phone = paraE164(telNacional.value, telPais.value)
 }
+
+function onPais(code) {
+  telPais.value = code
+  telNacional.value = formatarNacional(telNacional.value, code)
+  rascunho.value.phone = paraE164(telNacional.value, code)
+}
+
+const telefoneIncompleto = computed(() => {
+  if (!rascunho.value || rascunho.value.kind !== 'contact') return false
+  if (usaNumeroConectado.value || !telNacional.value) return false
+  return !telefoneValido(telNacional.value, telPais.value)
+})
+
+// Marcar "usar o número conectado" limpa o que estava digitado na hora, para a
+// tela não mostrar um número que não vai ser usado.
+watch(usaNumeroConectado, (usa) => {
+  if (usa) { telNacional.value = ''; if (rascunho.value) rascunho.value.phone = '' }
+})
 </script>
 
 <template>
@@ -104,19 +154,24 @@ function ehDesabilitado(campo) {
 
     <div v-for="(b, i) in blocks" :key="b.id" class="mf-sb__item" :class="{ 'is-open': editandoId === b.id }">
       <div class="mf-sb__cab">
+        <!-- ordem primeiro, e visível: as setas ficavam apagadas e ninguém as achava -->
+        <div class="mf-sb__ordem nodrag">
+          <button class="mf-sb__seta" title="Mover para cima" :disabled="readonly || i === 0" @click="mover(b.id, -1)">↑</button>
+          <button class="mf-sb__seta" title="Mover para baixo" :disabled="readonly || i === blocks.length - 1" @click="mover(b.id, 1)">↓</button>
+        </div>
+
         <span class="mf-sb__resumo" :title="resumoSubBloco(b, subTypes)">{{ resumoSubBloco(b, subTypes) }}</span>
+
         <div class="mf-sb__acoes nodrag">
-          <button class="mf-sb__ac" title="Mover para cima" :disabled="readonly || i === 0" @click="mover(b.id, -1)">↑</button>
-          <button class="mf-sb__ac" title="Mover para baixo" :disabled="readonly || i === blocks.length - 1" @click="mover(b.id, 1)">↓</button>
           <button class="mf-sb__ac" title="Duplicar" :disabled="readonly" @click="duplicar(b.id)">⧉</button>
-          <button class="mf-sb__ac mf-sb__ac--danger" title="Excluir" :disabled="readonly" @click="excluir(b.id)">✕</button>
+          <button class="mf-sb__ac mf-sb__ac--danger" title="Excluir" :disabled="readonly" @click="pedirExclusao(b)">✕</button>
           <button v-if="editandoId !== b.id" class="mf-sb__editar" :disabled="readonly" @click="abrir(b)">Editar</button>
         </div>
       </div>
 
       <div v-if="editandoId === b.id && rascunho" class="mf-sb__form">
         <div v-for="campo in specDe(b.kind).fields" :key="campo.key" class="mf-field">
-          <label class="mf-label">
+          <label v-if="campo.type !== 'switch'" class="mf-label">
             {{ campo.label }}<span v-if="campo.required" style="color: var(--error)"> *</span>
           </label>
 
@@ -161,13 +216,23 @@ function ehDesabilitado(campo) {
           </label>
 
           <div v-else-if="campo.type === 'phone'" class="mf-sb__phone">
-            <span class="mf-sb__ddi">🇧🇷 +55</span>
+            <select
+              class="mf-select mf-sb__ddi"
+              :disabled="readonly || usaNumeroConectado"
+              :value="telPais"
+              @change="onPais($event.target.value)"
+            >
+              <option v-for="p in PAISES" :key="p.code" :value="p.code">
+                {{ p.flag }} +{{ p.ddi }}
+              </option>
+            </select>
             <input
               class="mf-input"
-              :disabled="readonly || ehDesabilitado(campo)"
-              :placeholder="ehDesabilitado(campo) ? 'usa o número conectado' : '11 99999-0000'"
-              :value="rascunho[campo.key]"
-              @input="rascunho[campo.key] = $event.target.value"
+              inputmode="tel"
+              :disabled="readonly || usaNumeroConectado"
+              :placeholder="usaNumeroConectado ? 'usa o número conectado' : '(15) 99119-5899'"
+              :value="telNacional"
+              @input="onTelefone($event.target.value)"
             />
           </div>
 
@@ -183,6 +248,12 @@ function ehDesabilitado(campo) {
             Valor herdado: {{ rascunho[campo.key] }}{{ campo.unit || '' }} — acima do limite de
             {{ campo.max }}{{ campo.unit || '' }}. Ele é mantido até você mexer no controle.
           </div>
+          <div v-else-if="campo.type === 'phone' && usaNumeroConectado" class="mf-help">
+            O número sai do canal por onde a mensagem for enviada, e isso só se sabe no disparo.
+          </div>
+          <div v-else-if="campo.type === 'phone' && telefoneIncompleto" class="mf-help mf-sb__herdado">
+            Número incompleto para este país.
+          </div>
           <div v-else-if="campo.help" class="mf-help">{{ campo.help }}</div>
         </div>
 
@@ -192,10 +263,6 @@ function ehDesabilitado(campo) {
         </div>
       </div>
     </div>
-
-    <!-- avisar é obrigação: publicar um bloco com mídia hoje envia menos do que a
-         tela mostra, e isso não pode ser descoberto na conversa do cliente -->
-    <div v-if="aviso" class="mf-sb__aviso">⚠️ {{ aviso }}</div>
 
     <button v-if="!escolhendo" class="mf-sb__add" :disabled="readonly" @click="escolhendo = true">
       + Adicionar parte
@@ -213,6 +280,16 @@ function ehDesabilitado(campo) {
       </button>
       <button class="mf-sb__tipo mf-sb__tipo--cancel" @click="escolhendo = false">Cancelar</button>
     </div>
+
+    <ModalDialog
+      :open="!!paraExcluir"
+      title="Excluir esta parte?"
+      :message="paraExcluir ? `“${paraExcluir.resumo}” será removida da mensagem.` : ''"
+      confirm-label="Excluir"
+      danger
+      @confirm="confirmarExclusao"
+      @cancel="paraExcluir = null"
+    />
   </div>
 </template>
 
@@ -225,7 +302,7 @@ function ehDesabilitado(campo) {
   background: var(--surface);
 }
 .mf-sb__item.is-open { border-color: var(--accent); }
-.mf-sb__cab { display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 10px; }
+.mf-sb__cab { display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 4px; }
 .mf-sb__resumo {
   flex: 1;
   min-width: 0;
@@ -234,6 +311,21 @@ function ehDesabilitado(campo) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.mf-sb__ordem { display: flex; flex-direction: column; gap: 1px; }
+.mf-sb__seta {
+  width: 20px;
+  height: 15px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+}
+.mf-sb__seta:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.mf-sb__seta:disabled { opacity: .3; cursor: default; }
 .mf-sb__acoes { display: flex; align-items: center; gap: 2px; }
 .mf-sb__ac {
   width: 22px;
@@ -263,17 +355,8 @@ function ehDesabilitado(campo) {
 .mf-sb__range output { font-size: 12px; color: var(--text2); min-width: 34px; text-align: right; }
 .mf-sb__switch { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px; }
 .mf-sb__phone { display: flex; align-items: center; gap: 6px; }
-.mf-sb__ddi { font-size: 12px; color: var(--text2); white-space: nowrap; }
+.mf-sb__ddi { width: 104px; flex: 0 0 auto; padding: 8px 4px; font-size: 12px; }
 .mf-sb__herdado { color: var(--warn); }
-.mf-sb__aviso {
-  margin: 8px 0;
-  padding: 8px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  line-height: 1.4;
-  color: var(--warn);
-  background: rgba(245, 158, 11, .12);
-}
 .mf-sb__add {
   width: 100%;
   padding: 8px;

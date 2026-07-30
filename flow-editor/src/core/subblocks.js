@@ -8,8 +8,8 @@
  * ⚠️ `parameters.text` e `parameters.delay_seconds` continuam sendo escritos, mas
  * como ESPELHO (ver `buildMirrors`). O Executor v0 lê `parameters.text`; sem o
  * espelho, um fluxo publicado passaria a enviar mensagem vazia sem erro nenhum.
- * O espelho é degradado de propósito — mídia e contato não cabem nele — e a UI
- * avisa isso na tela. Ver `precisaExecutorNovo`.
+ * O espelho é degradado de propósito — mídia e contato não cabem nele — e isso
+ * some quando o executor aprender a ler `blocks[]` (contrato no §8 do spec).
  */
 
 /** Id local ao bloco: serve para reordenar e para o `key` da lista. Nada externo aponta para ele. */
@@ -99,21 +99,6 @@ export function buildMirrors(blocks) {
   return { text, delay_seconds: Math.min(300, Math.round(soma)) }
 }
 
-/**
- * Sub-blocos que o runtime atual descarta INTEIROS.
- *
- * `text` e `delay` sobrevivem pelos espelhos: o Executor v0 lê `parameters.text` e
- * `parameters.delay_seconds`. Todo o resto — imagem, vídeo, áudio, arquivo,
- * contato — não tem para onde ir e some da mensagem sem erro nenhum.
- *
- * ⚠️ Já foi mais amplo do que isto e avisava também para `delay`, o que era
- * exagero: a pausa acontece de verdade (só o "digitando" é que não).
- */
-const SOBREVIVEM_AO_ESPELHO = ['text', 'delay']
-
-export function precisaExecutorNovo(blocks) {
-  return (blocks || []).some((b) => !SOBREVIVEM_AO_ESPELHO.includes(b.kind))
-}
 
 /**
  * Lê os parâmetros de um bloco de Conteúdo em QUALQUER versão e devolve sempre a

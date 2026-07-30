@@ -11,6 +11,7 @@
  */
 import { ref, computed, watch } from 'vue'
 import { uploadAsset, listAssets, getAsset, deleteAsset, MAX_ASSET_BYTES } from '../lib/api.js'
+import ModalDialog from './ModalDialog.vue'
 
 const props = defineProps({
   modelValue: { type: [Number, null], default: null },
@@ -25,6 +26,7 @@ const arquivo = ref(null)
 const ocupado = ref(false)
 const erro = ref('')
 const biblioteca = ref(null) // null = fechada
+const paraExcluir = ref(null)
 const previa = ref('')
 const meta = ref(null)
 
@@ -75,11 +77,24 @@ async function escolherDoDisco(ev) {
   }
 }
 
+/**
+ * O `accept` do sub-bloco vale para os DOIS caminhos de escolha.
+ *
+ * ⚠️ Filtrar só o seletor de arquivo deixava a biblioteca oferecer um .png dentro
+ * do sub-bloco de Áudio — e o erro só apareceria no envio.
+ */
+function aceita(mime) {
+  const regras = String(props.accept || '*/*').split(',').map((s) => s.trim()).filter(Boolean)
+  if (!regras.length || regras.includes('*/*')) return true
+  const m = String(mime || '')
+  return regras.some((r) => (r.endsWith('/*') ? m.startsWith(r.slice(0, -1)) : m === r))
+}
+
 async function abrirBiblioteca() {
   erro.value = ''
   ocupado.value = true
   try {
-    biblioteca.value = await listAssets()
+    biblioteca.value = (await listAssets()).filter((a) => aceita(a.mime))
   } catch (e) {
     erro.value = e.message
     biblioteca.value = []
@@ -94,7 +109,14 @@ function usar(a) {
   biblioteca.value = null
 }
 
-async function excluir(a) {
+/** Apagar arquivo também passa pelo modal — nada destrutivo sai daqui direto. */
+function pedirExclusao(a) {
+  paraExcluir.value = a
+}
+
+async function confirmarExclusao() {
+  const a = paraExcluir.value
+  paraExcluir.value = null
   erro.value = ''
   try {
     await deleteAsset(a.id)
@@ -141,16 +163,26 @@ async function excluir(a) {
         <button class="mf-btn mf-btn--sm mf-btn--ghost" @click="biblioteca = null">✕</button>
       </div>
       <div v-if="!biblioteca.length" class="mf-help" style="padding: 8px 10px">
-        Nenhum arquivo enviado ainda.
+        Nenhum arquivo deste formato foi enviado ainda.
       </div>
       <div v-for="a in biblioteca" :key="a.id" class="mf-asset__linha">
         <button class="mf-asset__usar" @click="usar(a)">
           <span>{{ a.filename }}</span>
           <em>{{ tamanho(a.size_bytes) }}</em>
         </button>
-        <button class="mf-btn mf-btn--sm mf-btn--danger" title="Excluir" :disabled="readonly" @click="excluir(a)">✕</button>
+        <button class="mf-btn mf-btn--sm mf-btn--danger" title="Excluir" :disabled="readonly" @click="pedirExclusao(a)">✕</button>
       </div>
     </div>
+
+    <ModalDialog
+      :open="!!paraExcluir"
+      title="Excluir este arquivo?"
+      :message="paraExcluir ? `“${paraExcluir.filename}” sai da lista de já enviados. Se algum fluxo usar este arquivo, a exclusão será recusada.` : ''"
+      confirm-label="Excluir"
+      danger
+      @confirm="confirmarExclusao"
+      @cancel="paraExcluir = null"
+    />
   </div>
 </template>
 

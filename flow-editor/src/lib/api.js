@@ -372,7 +372,9 @@ async function mockCall(action, p) {
           { key: 'telefone', label: 'Telefone' },
           { key: 'ddd', label: 'DDD' },
           { key: 'email', label: 'E-mail' },
-          { key: 'etiquetas', label: 'Etiquetas' }
+          { key: 'identificador', label: 'Identificador externo' },
+          { key: 'cidade', label: 'Cidade' },
+          { key: 'pais', label: 'País' }
         ],
         client: [
           { key: 'EVO_Contrato', label: 'Contrato EVO' },

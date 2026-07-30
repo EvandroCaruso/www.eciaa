@@ -68,9 +68,17 @@
   line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
-  max-height: 88px;
-  overflow: hidden;
+  /* Cada parte da mensagem ocupa UMA linha e o card cresce junto. Havia um teto
+     de 88px aqui: com cinco partes, o card cortava a mensagem no meio e quem
+     olhava o canvas não via o fim do bloco. */
   border-radius: 0 0 7px 7px;
+}
+/* uma linha por parte, sem virar parágrafo */
+.mf-node__body--linhas { display: flex; flex-direction: column; gap: 2px; }
+.mf-node__body--linhas > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .mf-node__body.has-outputs { border-radius: 0; }
 .mf-node__body:empty::before { content: 'Clique para configurar'; opacity: .6; font-style: italic; }

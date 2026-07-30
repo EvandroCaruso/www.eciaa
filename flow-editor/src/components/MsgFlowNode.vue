@@ -2,7 +2,7 @@
 import { computed, inject } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 import { handleIdFor } from '../core/graph.js'
-import { resumoBloco } from '../core/preview.js'
+import { linhasDoBloco } from '../core/preview.js'
 import { subTypesFrom } from '../core/subblocks.js'
 
 const props = defineProps({
@@ -25,13 +25,7 @@ const podeDuplicar = computed(() => schema.value.singleton !== true)
 
 const preview = computed(() => {
   const p = props.data.parameters || {}
-  if (props.data.nodeType === 'eciaa.content') {
-    // O resumo da sequência vem de core/preview.js, a MESMA função que o painel
-    // usa. Recalcular aqui foi o que fez o indicador 🟢/🟡 divergir entre telas.
-    const campoBlocks = (schema.value.fields || []).find((f) => f.type === 'blocks')
-    const resumo = resumoBloco(p, subTypesFrom(campoBlocks))
-    return resumo || p.text || ''
-  }
+  if (props.data.nodeType === 'eciaa.content') return p.text || ''
   if (props.data.nodeType === 'eciaa.condition') {
     const rules = p.rules || []
     if (!rules.length) return ''
@@ -47,6 +41,17 @@ const preview = computed(() => {
 function labelOp(op) {
   return { equals: 'é igual a', contains: 'contém', exists: 'existe' }[op] || op
 }
+
+/**
+ * Sequência do Conteúdo: UMA linha por parte. Vem de core/preview.js, a mesma
+ * função que o painel usa — recalcular aqui foi o que fez o indicador 🟢/🟡
+ * divergir entre as duas telas.
+ */
+const linhas = computed(() => {
+  if (props.data.nodeType !== 'eciaa.content') return []
+  const campoBlocks = (schema.value.fields || []).find((f) => f.type === 'blocks')
+  return linhasDoBloco(props.data.parameters || {}, subTypesFrom(campoBlocks))
+})
 </script>
 
 <template>
@@ -77,7 +82,10 @@ function labelOp(op) {
       </div>
     </div>
 
-    <div class="mf-node__body has-outputs">{{ preview }}</div>
+    <div v-if="linhas.length" class="mf-node__body has-outputs mf-node__body--linhas">
+      <span v-for="(l, i) in linhas" :key="i" :title="l">{{ l }}</span>
+    </div>
+    <div v-else class="mf-node__body has-outputs">{{ preview }}</div>
 
     <div class="mf-node__outputs">
       <div v-for="(out, i) in outputs" :key="out.key" class="mf-node__output">

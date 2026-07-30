@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resumoSubBloco, resumoBloco, avisoRuntime } from './preview.js'
+import { resumoSubBloco, resumoBloco, linhasDoBloco } from './preview.js'
 
 const SUB_TYPES = [
   { kind: 'text', label: 'Texto', icon: '🔤' },
@@ -51,43 +51,25 @@ describe('resumoSubBloco', () => {
 })
 
 describe('resumoBloco', () => {
-  it('junta os sub-blocos na ordem', () => {
-    const p = { blocks: [
-      { kind: 'text', text: 'Oi' },
-      { kind: 'delay', seconds: 3, typing: true },
-      { kind: 'image', asset_id: 9 }
-    ] }
-    expect(resumoBloco(p, SUB_TYPES)).toBe('🔤 Oi · ⏱ 3s digitando · 🖼 Imagem')
+  const p = { blocks: [
+    { kind: 'text', text: 'Oi' },
+    { kind: 'delay', seconds: 3, typing: true },
+    { kind: 'image', asset_id: 9 }
+  ] }
+
+  it('põe uma parte POR LINHA, na ordem', () => {
+    // separadas por " · " numa linha só, cinco partes viravam um parágrafo ilegível
+    expect(resumoBloco(p, SUB_TYPES)).toBe('🔤 Oi\n⏱ 3s digitando\n🖼 Imagem')
+  })
+
+  it('linhasDoBloco devolve o array, para quem quiser desenhar item a item', () => {
+    expect(linhasDoBloco(p, SUB_TYPES)).toEqual(['🔤 Oi', '⏱ 3s digitando', '🖼 Imagem'])
   })
 
   it('bloco sem sub-blocos não vira lixo visual', () => {
     expect(resumoBloco({ blocks: [] }, SUB_TYPES)).toBe('')
     expect(resumoBloco({}, SUB_TYPES)).toBe('')
     expect(resumoBloco(null, SUB_TYPES)).toBe('')
-  })
-})
-
-describe('avisoRuntime', () => {
-  it('texto + mídia: avisa que sai só o texto', () => {
-    const p = { blocks: [{ kind: 'text', text: 'oi' }, { kind: 'image', asset_id: 1 }] }
-    expect(avisoRuntime(p)).toMatch(/só o texto/)
-  })
-
-  it('mídia sem texto: avisa que não sai NADA — é o caso mais perigoso', () => {
-    expect(avisoRuntime({ blocks: [{ kind: 'image', asset_id: 1 }] })).toMatch(/não manda nada/)
-  })
-
-  it('bloco só de texto não recebe aviso', () => {
-    expect(avisoRuntime({ blocks: [{ kind: 'text', text: 'oi' }] })).toBeNull()
-  })
-
-  it('atraso NÃO gera aviso: a pausa acontece de verdade pelo espelho', () => {
-    // avisar aqui seria exagero — delay_seconds é escrito e o executor v0 o respeita
-    expect(avisoRuntime({ blocks: [{ kind: 'delay', seconds: 3, typing: true }] })).toBeNull()
-    expect(avisoRuntime({ blocks: [{ kind: 'text', text: 'oi' }, { kind: 'delay', seconds: 3 }] })).toBeNull()
-  })
-
-  it('bloco vazio não recebe aviso', () => {
-    expect(avisoRuntime({ blocks: [] })).toBeNull()
+    expect(linhasDoBloco(null, SUB_TYPES)).toEqual([])
   })
 })

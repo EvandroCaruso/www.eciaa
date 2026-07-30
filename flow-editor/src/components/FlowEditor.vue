@@ -64,6 +64,7 @@ const selectedName = ref(null)
 const lastSaved = ref('')
 const dialog = ref({ open: false, mode: null, title: '', message: '', confirmLabel: '', danger: false })
 const pickerAberto = ref(false)
+const pendenteExclusao = ref({ nomes: [], arestas: [] })
 const ctx = ref(null) // { x, y, titulo, itens }
 
 const typesByKey = computed(() => Object.fromEntries(typesList.value.map((t) => [t.node_type, t])))
@@ -186,10 +187,42 @@ async function load() {
 
 // ---------- edição do grafo ----------
 
+/**
+ * Histórico para o Ctrl+Z.
+ *
+ * Guarda o grafo inteiro serializado antes de cada mudança. O grafo é JSON puro e
+ * pequeno (um fluxo grande tem dezenas de nós), então snapshot inteiro é mais
+ * barato de acertar do que diff — e é o que faz o desfazer valer TAMBÉM para
+ * sub-bloco, que vive dentro de `parameters` e não tem operação própria.
+ */
+const undoStack = ref([])
+const TETO_UNDO = 50
+
+function pushUndo() {
+  if (readonly.value) return
+  undoStack.value.push(JSON.stringify(graph.value))
+  if (undoStack.value.length > TETO_UNDO) undoStack.value.shift()
+}
+
+function desfazer() {
+  if (readonly.value || !undoStack.value.length) {
+    emit('toast', { type: 'error', text: 'Não há nada para desfazer.' })
+    return
+  }
+  graph.value = JSON.parse(undoStack.value.pop())
+  if (!findNode(graph.value, selectedName.value)) selectedName.value = null
+  syncFromGraph(selectedName.value ? [selectedName.value] : [])
+  emit('toast', { type: 'ok', text: 'Desfeito.' })
+}
+
 function apply(fn, keepSelected) {
   if (readonly.value) return false
+  const antes = JSON.stringify(graph.value)
   try {
     graph.value = fn(graph.value)
+    // só entra no histórico o que de fato mudou — senão o Ctrl+Z gasta passos à toa
+    if (JSON.stringify(graph.value) !== antes) undoStack.value.push(antes)
+    if (undoStack.value.length > TETO_UNDO) undoStack.value.shift()
     syncFromGraph(keepSelected)
     return true
   } catch (e) {
@@ -303,6 +336,7 @@ function inserirBloco(nodeType) {
     if (livre >= 0) g2 = connect(g1, ancora.name, livre, node.name)
   }
 
+  pushUndo()
   graph.value = g2
   selectedName.value = node.name
   syncFromGraph([node.name])
@@ -330,6 +364,7 @@ function onDrop(event) {
     position: [x, y],
     parameters: parametrosPadrao(spec)
   })
+  pushUndo()
   graph.value = g
   selectedName.value = node.name
   syncFromGraph([node.name])
@@ -338,6 +373,8 @@ function onDrop(event) {
 function updateParams(parameters) {
   const n = findNode(graph.value, selectedName.value)
   if (!n) return
+  // sub-bloco excluído entra aqui: por isso o Ctrl+Z cobre os dois níveis
+  pushUndo()
   n.parameters = parameters
   graph.value = { ...graph.value }
   syncFromGraph()
@@ -353,19 +390,42 @@ function onRename({ from, to, onError }) {
   }
 }
 
+/**
+ * Excluir bloco NUNCA acontece no clique: passa pelo modal. Vale para os quatro
+ * caminhos — botão do card, painel de propriedades, menu de contexto e a tecla
+ * Del —, porque todos desembocam aqui ou em `pedirExclusaoEmMassa`.
+ */
 function excluirNo(nome) {
   if (!podeExcluir(nome)) {
     emit('toast', { type: 'error', text: 'O bloco de Início não pode ser excluído.' })
     return
   }
-  apply((g) => deleteNode(g, nome), [])
-  if (selectedName.value === nome) selectedName.value = null
+  pendenteExclusao.value = { nomes: [nome], arestas: [] }
+  dialog.value = {
+    open: true, mode: 'delete', title: 'Excluir bloco?',
+    message: `O bloco “${nome}” e as conexões dele serão removidos. Dá para desfazer com Ctrl+Z.`,
+    confirmLabel: 'Excluir', danger: true
+  }
+}
+
+function doDelete() {
+  const { nomes, arestas } = pendenteExclusao.value
+  pendenteExclusao.value = { nomes: [], arestas: [] }
+  apply((g) => {
+    let out = g
+    // conexões primeiro: apagar o nó já leva as dele junto
+    for (const e of arestas) out = disconnect(out, e.source, outputIndexFrom(e.sourceHandle), e.target)
+    for (const nome of nomes) if (podeExcluir(nome)) out = deleteNode(out, nome)
+    return out
+  }, [])
+  if (nomes.includes(selectedName.value)) selectedName.value = null
 }
 
 function duplicarNo(nome) {
   const clip = copyNodes(graph.value, [nome])
   if (!clip.nodes.length) return
   const { graph: g, names } = pasteNodes(graph.value, clip)
+  pushUndo()
   graph.value = g
   selectedName.value = names[0]
   syncFromGraph(names)
@@ -523,17 +583,23 @@ async function onKeydown(event) {
   } else if (ctrl && event.key.toLowerCase() === 'a') {
     event.preventDefault()
     selecionarTudo()
+  } else if (ctrl && event.key.toLowerCase() === 'z') {
+    event.preventDefault()
+    desfazer()
   } else if (event.key === 'Delete' || event.key === 'Backspace') {
     if (!nomes.length && !arestasSel.length) return
     event.preventDefault()
-    apply((g) => {
-      let out = g
-      // conexões primeiro: apagar o nó já leva as dele junto
-      for (const e of arestasSel) out = disconnect(out, e.source, outputIndexFrom(e.sourceHandle), e.target)
-      for (const nome of nomes) if (podeExcluir(nome)) out = deleteNode(out, nome)
-      return out
-    }, [])
-    if (nomes.includes(selectedName.value)) selectedName.value = null
+    const apagaveis = nomes.filter(podeExcluir)
+    if (!apagaveis.length && !arestasSel.length) return
+    pendenteExclusao.value = { nomes: apagaveis, arestas: arestasSel }
+    const partes = []
+    if (apagaveis.length) partes.push(`${apagaveis.length} bloco(s)`)
+    if (arestasSel.length) partes.push(`${arestasSel.length} conexão(ões)`)
+    dialog.value = {
+      open: true, mode: 'delete', title: 'Excluir?',
+      message: `${partes.join(' e ')} serão removidos. Dá para desfazer com Ctrl+Z.`,
+      confirmLabel: 'Excluir', danger: true
+    }
   }
 }
 
@@ -684,7 +750,8 @@ function goBack() {
 function onDialogConfirm() {
   const mode = dialog.value.mode
   dialog.value = { ...dialog.value, open: false }
-  if (mode === 'publish') doPublish()
+  if (mode === 'delete') doDelete()
+  else if (mode === 'publish') doPublish()
   else if (mode === 'unpublish') doUnpublish()
   else if (mode === 'leave') emit('back', saidaPendente.value)
 }
