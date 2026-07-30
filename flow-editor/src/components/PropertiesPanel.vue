@@ -5,6 +5,7 @@
  * Um tipo novo no banco ganha formulário sem tocar neste arquivo.
  */
 import { computed, ref, watch } from 'vue'
+import SubBlockList from './SubBlockList.vue'
 
 const props = defineProps({
   node: { type: Object, default: null }, // { name, nodeType, parameters, spec }
@@ -140,6 +141,16 @@ function removeRule(field, i) {
         >
           <option v-for="opt in field.options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
         </select>
+
+        <!-- sequência de sub-blocos do Conteúdo: o único controle que escreve o
+             objeto de parâmetros inteiro (precisa manter os espelhos coerentes) -->
+        <SubBlockList
+          v-else-if="field.type === 'blocks'"
+          :field="field"
+          :parameters="node.parameters || {}"
+          :readonly="readonly"
+          @update="(p) => emit('update-params', p)"
+        />
 
         <!-- lista de regras da Condição -->
         <div v-else-if="field.type === 'rule-list'">

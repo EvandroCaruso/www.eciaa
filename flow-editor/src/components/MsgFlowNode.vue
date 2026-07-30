@@ -2,6 +2,8 @@
 import { computed, inject } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 import { handleIdFor } from '../core/graph.js'
+import { resumoBloco } from '../core/preview.js'
+import { subTypesFrom } from '../core/subblocks.js'
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -23,7 +25,13 @@ const podeDuplicar = computed(() => schema.value.singleton !== true)
 
 const preview = computed(() => {
   const p = props.data.parameters || {}
-  if (props.data.nodeType === 'eciaa.content') return p.text || ''
+  if (props.data.nodeType === 'eciaa.content') {
+    // O resumo da sequência vem de core/preview.js, a MESMA função que o painel
+    // usa. Recalcular aqui foi o que fez o indicador 🟢/🟡 divergir entre telas.
+    const campoBlocks = (schema.value.fields || []).find((f) => f.type === 'blocks')
+    const resumo = resumoBloco(p, subTypesFrom(campoBlocks))
+    return resumo || p.text || ''
+  }
   if (props.data.nodeType === 'eciaa.condition') {
     const rules = p.rules || []
     if (!rules.length) return ''
