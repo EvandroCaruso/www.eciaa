@@ -12,6 +12,7 @@ import { computed, ref, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { call, crud } from '../lib/api.js'
 import { createEmptyGraph, addNode } from '../core/graph.js'
 import { isFlowNameTaken, uniqueFlowName } from '../core/names.js'
+import { posicionaNoDom } from '../core/popover.js'
 import ModalDialog from './ModalDialog.vue'
 
 const props = defineProps({
@@ -393,25 +394,10 @@ async function toggleMenu(flow, ev) {
 }
 
 function positionMenu(rect) {
-  const el = menuEl.value
-  if (!el) return
-  const margem = 8
-  const abaixo = window.innerHeight - rect.bottom - margem - 4
-  const acima = rect.top - margem - 4
-  const altura = el.scrollHeight
-  const paraCima = altura > abaixo && acima > abaixo
-
-  const maxHeight = Math.max(140, paraCima ? acima : abaixo)
-  const usada = Math.min(altura, maxHeight)
-
-  let left = rect.right - el.offsetWidth
-  left = Math.min(Math.max(margem, left), window.innerWidth - margem - el.offsetWidth)
-
-  menuPos.value = {
-    left,
-    top: paraCima ? rect.top - 4 - usada : rect.bottom + 4,
-    maxHeight
-  }
+  // a aritmética (flip + clamp) mora em core/popover.js, testada e compartilhada
+  // com o popover da Condição — antes era inline aqui, sem teste nenhum
+  if (!menuEl.value) return
+  menuPos.value = posicionaNoDom(rect, menuEl.value)
 }
 
 // Menu fixo não acompanha a rolagem — em vez de recalcular a cada scroll, fecha.

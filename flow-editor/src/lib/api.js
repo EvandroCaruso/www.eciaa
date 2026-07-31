@@ -97,6 +97,36 @@ export function fetchContactFields() {
   return camposPromise
 }
 
+/**
+ * Etiquetas e membros do cwmkt, para o seletor do bloco Condição.
+ *
+ * Vem numa chamada só porque o seletor precisa das duas no mesmo gesto — e
+ * SEPARADO do contact_fields de propósito: aquele é buscado por todo campo de
+ * texto do Conteúdo, e fundir faria toda edição de mensagem pagar dois GETs a
+ * mais no cwmkt.
+ *
+ * Os erros são independentes: /labels fora do ar não pode apagar a lista de
+ * membros. Memoizado pelo mesmo motivo do contact_fields.
+ */
+let catalogoPromise = null
+
+export function fetchConditionCatalog() {
+  if (!catalogoPromise) {
+    catalogoPromise = call('condition_catalog')
+      .then((r) => ({
+        labels: r.labels || [],
+        labels_error: r.labels_error || null,
+        agents: r.agents || [],
+        agents_error: r.agents_error || null
+      }))
+      .catch((e) => {
+        catalogoPromise = null // erro não vira cache: a próxima tentativa refaz
+        return { labels: [], labels_error: e.message, agents: [], agents_error: e.message }
+      })
+  }
+  return catalogoPromise
+}
+
 /** Lê um File do <input type=file> como base64 puro (sem o prefixo data:). */
 export function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -186,21 +216,44 @@ const MOCK_TYPES = [
     sort_order: 1
   },
   {
-    node_type: 'eciaa.condition', type_version: 1, label: 'Condição', category: 'logic',
+    // ⚠️ ESPELHO do catálogo real (linha eciaa.condition de msgflow_node_types no
+    // pg_1). Mexeu num, mexa no outro — senão `npm run dev` mostra o bloco antigo
+    // e o desenvolvimento acontece contra uma tela que não existe em produção.
+    node_type: 'eciaa.condition', type_version: 2, label: 'Condição', category: 'logic',
     icon: '🔀', color: '#f59e0b',
+    // ⚠️ A ORDEM das saídas é o índice em connections.main: 0 = Verdadeiro.
+    // Reordenar aqui quebra todo fluxo publicado.
     outputs: [{ key: 'true', label: 'Verdadeiro' }, { key: 'false', label: 'Falso' }],
     params_schema: {
+      help: 'O fluxo se divide aqui: quem atende às condições sai pela saída Verdadeiro; o resto, pela Falso.',
+      // O aviso mora no catálogo (e não no código) para poder ser apagado por um
+      // UPDATE no dia em que o executor aprender a ler conditions[] — sem build,
+      // sem commit, sem virar o ASSET_JS. Da última vez, tirar um aviso da tela
+      // custou um ciclo inteiro de publicação.
+      runtime_warning: 'O runtime ainda não avalia estas condições. Por enquanto este bloco sempre segue pela saída Verdadeiro — a saída Falso não é usada. Publicar é permitido; o que ainda não acontece é o desvio.',
       fields: [
-        { key: 'mode', type: 'radio', label: 'O contato precisa atender', default: 'ALL',
-          options: [{ value: 'ALL', label: 'todas as regras' }, { value: 'ANY', label: 'qualquer uma das regras' }] },
-        { key: 'rules', type: 'rule-list', label: 'Regras', default: [],
-          item: {
-            attr: { type: 'combo', label: 'Atributo', default: 'contact.labels',
-              options: ['contact.name', 'contact.phone', 'contact.email', 'contact.labels', 'contact.custom_attributes.', 'vars.'] },
-            op: { type: 'select', label: 'Operador', default: 'contains',
-              options: [{ value: 'equals', label: 'é igual a' }, { value: 'contains', label: 'contém' }, { value: 'exists', label: 'existe' }] },
-            value: { type: 'text', label: 'Valor', hidden_when: { op: 'exists' } }
-          } }
+        { key: 'mode', type: 'radio', label: '', default: 'ALL',
+          options: [
+            { value: 'ALL', label: 'Contato corresponde a TODAS condições' },
+            { value: 'ANY', label: 'Contato corresponde a QUALQUER condição' }
+          ] },
+        { key: 'conditions', type: 'condition-list', label: '', default: [],
+          add_label: 'Selecionar Condição',
+          empty_help: 'Sem condições, o bloco sempre segue pela saída Verdadeiro.',
+          // O catálogo diz QUAIS sujeitos aparecem, com que rótulo e em que ordem.
+          // Os OPERADORES de cada um vivem em core/condition.js: o id do operador
+          // é a instrução que o executor executa, não texto de tela.
+          groups: [
+            { title: 'OPERAÇÕES MAIS USADAS', subjects: [
+              { subject: 'label', label: 'Etiqueta' },
+              { subject: 'weekday', label: 'Dia da Semana ao passar por aqui' },
+              { subject: 'business_hours', label: 'Horário de Atendimento' },
+              { subject: 'time', label: 'Hora ao passar por aqui' },
+              { subject: 'assignee', label: 'Atendimento está atribuído para um membro' }
+            ] },
+            { title: 'CAMPOS DO SISTEMA', from: 'contact_fields.system' },
+            { title: 'CAMPOS DESTE CLIENTE', from: 'contact_fields.client' }
+          ] }
       ]
     },
     sort_order: 2
@@ -365,22 +418,46 @@ async function mockCall(action, p) {
     case 'contact_fields':
       return {
         ok: true,
+        // `type` é o que decide quais operadores o bloco Condição oferece.
+        // No ambiente real (medido 2026-07-31) todos os campos são 'text'; aqui
+        // o mock traz um de cada tipo de propósito, senão data e número nunca
+        // seriam exercitados em desenvolvimento.
         system: [
-          { key: 'nome-completo', label: 'Nome completo' },
-          { key: 'primeiro-nome', label: 'Primeiro nome' },
-          { key: 'sobrenome', label: 'Sobrenome' },
-          { key: 'telefone', label: 'Telefone' },
-          { key: 'ddd', label: 'DDD' },
-          { key: 'email', label: 'E-mail' },
-          { key: 'identificador', label: 'Identificador externo' },
-          { key: 'cidade', label: 'Cidade' },
-          { key: 'pais', label: 'País' }
+          { key: 'nome-completo', label: 'Nome completo', type: 'text' },
+          { key: 'primeiro-nome', label: 'Primeiro nome', type: 'text' },
+          { key: 'sobrenome', label: 'Sobrenome', type: 'text' },
+          { key: 'telefone', label: 'Telefone', type: 'text' },
+          { key: 'ddd', label: 'DDD', type: 'text' },
+          { key: 'email', label: 'E-mail', type: 'text' },
+          { key: 'identificador', label: 'Identificador externo', type: 'text' },
+          { key: 'cidade', label: 'Cidade', type: 'text' },
+          { key: 'pais', label: 'País', type: 'text' }
         ],
         client: [
-          { key: 'EVO_Contrato', label: 'Contrato EVO' },
-          { key: 'nome-indicador', label: 'Nome do indicador' }
+          { key: 'EVO_Contrato', label: 'Contrato EVO', type: 'text', values: [] },
+          { key: 'nome-indicador', label: 'Nome do indicador', type: 'text', values: [] },
+          { key: 'data-adesao', label: 'Data de adesão', type: 'date', values: [] },
+          { key: 'peso', label: 'Peso', type: 'number', values: [] }
         ],
         client_error: null
+      }
+
+    case 'condition_catalog':
+      return {
+        ok: true,
+        labels: [
+          { id: 1, title: '#DEMO' },
+          { id: 2, title: '.NomeConfirmado' },
+          { id: 3, title: 'ATIVOS PILATES' },
+          { id: 4, title: 'Aniv_Ex_Quer10%' }
+        ],
+        labels_error: null,
+        agents: [
+          { id: 26, name: 'Evandro Caruso' },
+          { id: 31, name: 'Abner' },
+          { id: 42, name: 'Murilo' }
+        ],
+        agents_error: null
       }
 
     case 'asset_upload': {

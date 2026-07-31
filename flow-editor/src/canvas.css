@@ -75,6 +75,8 @@
 }
 /* uma linha por parte, sem virar parágrafo */
 .mf-node__body--linhas { display: flex; flex-direction: column; gap: 2px; }
+/* frase da saída Verdadeiro no topo da Condição: contexto, não conteúdo */
+.mf-node__cab { opacity: .65; font-size: .92em; margin-bottom: 2px; }
 .mf-node__body--linhas > span {
   overflow: hidden;
   text-overflow: ellipsis;

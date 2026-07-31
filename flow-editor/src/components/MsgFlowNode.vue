@@ -2,8 +2,9 @@
 import { computed, inject } from 'vue'
 import { Handle, Position } from '@vue-flow/core'
 import { handleIdFor } from '../core/graph.js'
-import { linhasDoBloco } from '../core/preview.js'
+import { linhasDoBloco, linhasDaCondicao } from '../core/preview.js'
 import { subTypesFrom } from '../core/subblocks.js'
+import { normalizeParameters, sujeitosDoCampo, fraseVerdadeiro } from '../core/condition.js'
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -26,31 +27,38 @@ const podeDuplicar = computed(() => schema.value.singleton !== true)
 const preview = computed(() => {
   const p = props.data.parameters || {}
   if (props.data.nodeType === 'eciaa.content') return p.text || ''
-  if (props.data.nodeType === 'eciaa.condition') {
-    const rules = p.rules || []
-    if (!rules.length) return ''
-    const join = p.mode === 'ANY' ? ' ou ' : ' e '
-    return rules
-      .map((r) => `${r.attr} ${labelOp(r.op)} ${r.op === 'exists' ? '' : `"${r.value ?? ''}"`}`.trim())
-      .join(join)
-  }
   if (isStart.value) return 'O fluxo começa aqui'
   return ''
 })
 
-function labelOp(op) {
-  return { equals: 'é igual a', contains: 'contém', exists: 'existe' }[op] || op
-}
-
 /**
- * Sequência do Conteúdo: UMA linha por parte. Vem de core/preview.js, a mesma
- * função que o painel usa — recalcular aqui foi o que fez o indicador 🟢/🟡
- * divergir entre as duas telas.
+ * Sequência do Conteúdo e lista da Condição: UMA linha por parte. As duas vêm de
+ * core/preview.js, a mesma função que o painel usa — recalcular aqui foi o que
+ * fez o indicador 🟢/🟡 divergir entre as duas telas, e era também o que o
+ * `labelOp()` deste arquivo fazia com os rótulos de operador (removido).
  */
 const linhas = computed(() => {
-  if (props.data.nodeType !== 'eciaa.content') return []
-  const campoBlocks = (schema.value.fields || []).find((f) => f.type === 'blocks')
-  return linhasDoBloco(props.data.parameters || {}, subTypesFrom(campoBlocks))
+  const p = props.data.parameters || {}
+
+  if (props.data.nodeType === 'eciaa.content') {
+    const campoBlocks = (schema.value.fields || []).find((f) => f.type === 'blocks')
+    return linhasDoBloco(p, subTypesFrom(campoBlocks))
+  }
+
+  if (props.data.nodeType === 'eciaa.condition') {
+    const campo = (schema.value.fields || []).find((f) => f.type === 'condition-list')
+    // Sem catálogo vivo aqui de propósito: o card cai na fotografia gravada
+    // (field_label, value_label), que é o que o mantém legível com o cwmkt fora.
+    return linhasDaCondicao(normalizeParameters(p), { sujeitos: sujeitosDoCampo(campo) })
+  }
+
+  return []
+})
+
+/** Frase da saída Verdadeiro, no topo do corpo — muda com o modo E/Ou. */
+const cabecalhoCondicao = computed(() => {
+  if (props.data.nodeType !== 'eciaa.condition' || !linhas.value.length) return ''
+  return fraseVerdadeiro(normalizeParameters(props.data.parameters || {}).mode)
 })
 </script>
 
@@ -83,6 +91,7 @@ const linhas = computed(() => {
     </div>
 
     <div v-if="linhas.length" class="mf-node__body has-outputs mf-node__body--linhas">
+      <span v-if="cabecalhoCondicao" class="mf-node__cab">{{ cabecalhoCondicao }}</span>
       <span v-for="(l, i) in linhas" :key="i" :title="l">{{ l }}</span>
     </div>
     <div v-else class="mf-node__body has-outputs">{{ preview }}</div>

@@ -6,6 +6,7 @@
  */
 import { computed, ref, watch } from 'vue'
 import SubBlockList from './SubBlockList.vue'
+import ConditionList from './ConditionList.vue'
 
 const props = defineProps({
   node: { type: Object, default: null }, // { name, nodeType, parameters, spec }
@@ -152,7 +153,20 @@ function removeRule(field, i) {
           @update="(p) => emit('update-params', p)"
         />
 
-        <!-- lista de regras da Condição -->
+        <!-- lista de condições do bloco Condição (v2) -->
+        <ConditionList
+          v-else-if="field.type === 'condition-list'"
+          :field="field"
+          :parameters="node.parameters || {}"
+          :schema="node.spec?.params_schema || {}"
+          :readonly="readonly"
+          @update="(p) => emit('update-params', p)"
+        />
+
+        <!-- lista de regras da Condição — formato ANTIGO (type_version 1).
+             Sai numa segunda publicação, depois que o v2 estiver homologado: o
+             bundle novo tem de entender os DOIS esquemas enquanto a linha do
+             catálogo ainda não virou, senão a tela quebra no intervalo. -->
         <div v-else-if="field.type === 'rule-list'">
           <div v-for="(rule, i) in rules(field)" :key="i" class="mf-rule">
             <input
