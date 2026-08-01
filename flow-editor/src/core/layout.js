@@ -165,28 +165,96 @@ export function organizarGrafo(graph, opts = {}) {
     lista.forEach((n, i) => indice.set(n, i))
   }
 
-  // x pela camada; y empilhado e centrado, para o fluxo ficar simétrico
-  const posicoes = new Map()
-  const alturaDaColuna = new Map()
-  for (const c of ordenadas) {
-    const lista = porCamada.get(c)
-    alturaDaColuna.set(c, lista.reduce((s, n) => s + alturaDe(n), 0) + gapY * (lista.length - 1))
-  }
-  const alturaMaior = Math.max(0, ...alturaDaColuna.values())
+  const filhos = new Map(nomes.map((n) => [n, []]))
+  for (const a of arcos) filhos.get(a.de).push(a)
 
+  // -------------------------------------------------------------------------
+  // y: distribuição PROPORCIONAL, não empilhamento centrado
+  // -------------------------------------------------------------------------
+  // Centrar cada coluna no global (o que se fazia até 31/07) alinha as colunas
+  // mas não relaciona pai e filho: um bloco com 2 ou n saídas ficava com os
+  // filhos empilhados no topo da coluna em vez de abertos em leque em volta
+  // dele. Aqui os centros são refinados por baricentro, nas duas direções:
+  //   → filho segue a média dos pais  (o ramo desce junto de quem o originou)
+  //   ← pai segue a média dos filhos  (é isto que abre o leque simétrico)
+  // Poucas passadas bastam; o resultado converge rápido e é determinístico —
+  // `jaOrganizado` depende disso para não gastar um passo de desfazer à toa.
+  const centro = new Map()
   for (const c of ordenadas) {
-    const lista = porCamada.get(c)
-    let y = origem[1] + (alturaMaior - alturaDaColuna.get(c)) / 2
-    const x = origem[0] + c * (larguraNo + gapX)
-    for (const n of lista) {
-      posicoes.set(n, [Math.round(x), Math.round(y)])
+    let y = 0
+    for (const n of porCamada.get(c)) {
+      centro.set(n, y + alturaDe(n) / 2)
       y += alturaDe(n) + gapY
+    }
+  }
+
+  /**
+   * Aplica os centros desejados de uma camada preservando a ORDEM já decidida e
+   * o espaçamento mínimo. O empurrão é só para baixo; a coluna inteira é
+   * recentrada no fim para não escorregar a cada passada.
+   */
+  function acomoda(c, desejado) {
+    const lista = porCamada.get(c)
+    const tops = []
+    let limite = -Infinity
+    for (const n of lista) {
+      const h = alturaDe(n)
+      const top = Math.max(limite, (desejado.has(n) ? desejado.get(n) : centro.get(n)) - h / 2)
+      tops.push(top)
+      limite = top + h + gapY
+    }
+    const alvos = lista.filter((n) => desejado.has(n))
+    if (alvos.length) {
+      const media = (f) => alvos.reduce((s, n) => s + f(n), 0) / alvos.length
+      const delta = media((n) => desejado.get(n)) - media((n) => tops[lista.indexOf(n)] + alturaDe(n) / 2)
+      lista.forEach((n, i) => centro.set(n, tops[i] + alturaDe(n) / 2 + delta))
+    } else {
+      lista.forEach((n, i) => centro.set(n, tops[i] + alturaDe(n) / 2))
+    }
+  }
+
+  const mediaDe = (arcosDoNo, ponta) => {
+    const vs = arcosDoNo.map((a) => centro.get(a[ponta])).filter((v) => v !== undefined)
+    return vs.length ? vs.reduce((s, v) => s + v, 0) / vs.length : undefined
+  }
+
+  for (let passada = 0; passada < 4; passada++) {
+    for (const c of ordenadas.slice(1)) {
+      const desejado = new Map()
+      for (const n of porCamada.get(c)) {
+        const m = mediaDe(pais.get(n), 'de')
+        if (m !== undefined) desejado.set(n, m)
+      }
+      acomoda(c, desejado)
+    }
+    for (const c of [...ordenadas].reverse().slice(1)) {
+      const desejado = new Map()
+      for (const n of porCamada.get(c)) {
+        const m = mediaDe(filhos.get(n), 'para')
+        if (m !== undefined) desejado.set(n, m)
+      }
+      acomoda(c, desejado)
+    }
+  }
+
+  // encosta o desenho inteiro na origem, preservando as distâncias relativas
+  const topos = noFluxo.map((n) => centro.get(n) - alturaDe(n) / 2)
+  const deslocamento = origem[1] - (topos.length ? Math.min(...topos) : 0)
+
+  const posicoes = new Map()
+  for (const c of ordenadas) {
+    const x = origem[0] + c * (larguraNo + gapX)
+    for (const n of porCamada.get(c)) {
+      posicoes.set(n, [Math.round(x), Math.round(centro.get(n) - alturaDe(n) / 2 + deslocamento)])
     }
   }
 
   // faixa dos soltos, abaixo de tudo
   if (soltos.length) {
-    const yBase = origem[1] + alturaMaior + gapY * 3
+    const fundo = noFluxo.length
+      ? Math.max(...noFluxo.map((n) => posicoes.get(n)[1] + alturaDe(n)))
+      : origem[1]
+    const yBase = fundo + gapY * 3
     soltos.forEach((n, i) => {
       posicoes.set(n, [Math.round(origem[0] + i * (larguraNo + gapX)), Math.round(yBase)])
     })

@@ -52,9 +52,9 @@ describe('catálogo de operadores', () => {
     const ids = new Set()
     for (const lista of Object.values(OPERADORES)) for (const op of lista) ids.add(op.id)
     expect([...ids].sort()).toEqual([
-      'after', 'before', 'between', 'contains', 'ends_with', 'greater_than',
-      'has_any_value', 'inside', 'is', 'is_empty', 'is_not', 'less_than',
-      'not_contains', 'on', 'outside', 'starts_with'
+      'after', 'before', 'between', 'contains', 'ends_with', 'exists',
+      'greater_than', 'has_any_value', 'inside', 'is', 'is_empty', 'is_not',
+      'less_than', 'not_contains', 'not_exists', 'on', 'outside', 'starts_with'
     ])
   })
 
@@ -385,12 +385,35 @@ describe('operadores novos de 31/07', () => {
     expect(labelOperador('ends_with')).toBe('Termina Com')
   })
 
-  it('Vazio existe nos TRÊS tipos de campo, como complemento de Possui algum valor', () => {
+  it('os QUATRO operadores de presença existem nos três tipos de campo', () => {
+    // existir e ter conteúdo são perguntas diferentes: a chave pode estar
+    // ausente da ficha, presente em branco, ou presente com conteúdo
     for (const k of ['field:text', 'field:date', 'field:number']) {
       const ids = OPERADORES[k].map((o) => o.id)
-      expect(ids).toContain('is_empty')
-      expect(ids).toContain('has_any_value')
+      for (const p of ['has_any_value', 'is_empty', 'exists', 'not_exists']) {
+        expect(ids).toContain(p)
+      }
     }
+  })
+
+  it('os quatro de presença não pedem valor e têm o mesmo rótulo em todo tipo', () => {
+    expect(labelOperador('exists')).toBe('Existe')
+    expect(labelOperador('not_exists')).toBe('Não existe')
+    expect(labelOperador('is_empty')).toBe('Vazio')
+    for (const k of ['field:text', 'field:date', 'field:number']) {
+      for (const o of OPERADORES[k]) {
+        if (['has_any_value', 'is_empty', 'exists', 'not_exists'].includes(o.id)) {
+          expect(o.aridade).toBe(0)
+          expect(o.editor).toBe('none')
+        }
+      }
+    }
+  })
+
+  it('o `exists` LEGADO continua virando has_any_value, não o homônimo novo', () => {
+    // no formato antigo `exists` queria dizer "tem conteúdo"; traduzir para o
+    // operador novo de mesmo nome mudaria o sentido de regra já publicada
+    expect(migraRegra({ attr: 'contact.name', op: 'exists' }).op).toBe('has_any_value')
   })
 
   it('Vazio não pede valor, então nunca está incompleta', () => {

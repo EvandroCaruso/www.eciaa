@@ -53,6 +53,33 @@ export const DIAS_SEMANA = Object.freeze([
  * valor pode faltar e isso MUDA A PERGUNTA (em `assignee`: sem valor = "tem alguém
  * atribuído"; com valor = "é o fulano").
  */
+/**
+ * Os QUATRO operadores de presença, iguais nos três tipos de campo.
+ *
+ * ⚠️ Existir e ter conteúdo são perguntas DIFERENTES, e a distinção é real: nem
+ * todo contato tem todos os campos. Um `custom_attributes` pode estar ausente da
+ * ficha, presente e em branco, ou presente e preenchido — três estados, não dois.
+ * Colapsá-los (como esta lista fazia até 31/07, quando `Vazio` também respondia
+ * "verdadeiro" para campo ausente) faz a pessoa escrever uma pergunta e o
+ * executor responder outra.
+ *
+ *   existe? ──não──> `not_exists` verdadeiro; os outros três, falsos
+ *      │sim
+ *      └──> `exists` verdadeiro
+ *            ├─ em branco ──> `is_empty` verdadeiro
+ *            └─ com conteúdo ──> `has_any_value` verdadeiro
+ *
+ * ⚠️ Em campo de SISTEMA (nome, telefone, e-mail) a chave praticamente sempre
+ * existe: ali `not_exists` quase nunca é verdadeiro, e quem quer "não preencheu"
+ * deve usar `is_empty`. A distinção paga o preço dela nos campos do cliente.
+ */
+const PRESENCA = Object.freeze([
+  { id: 'has_any_value', label: 'Possui algum valor', aridade: 0, editor: 'none' },
+  { id: 'is_empty', label: 'Vazio', aridade: 0, editor: 'none' },
+  { id: 'exists', label: 'Existe', aridade: 0, editor: 'none' },
+  { id: 'not_exists', label: 'Não existe', aridade: 0, editor: 'none' }
+])
+
 export const OPERADORES = Object.freeze({
   label: [
     { id: 'is', label: 'É', aridade: 1, editor: 'label-list' },
@@ -82,16 +109,14 @@ export const OPERADORES = Object.freeze({
     { id: 'not_contains', label: 'Não Contém', aridade: 1, editor: 'text' },
     { id: 'starts_with', label: 'Começa Com', aridade: 1, editor: 'text' },
     { id: 'ends_with', label: 'Termina Com', aridade: 1, editor: 'text' },
-    { id: 'has_any_value', label: 'Possui algum valor', aridade: 0, editor: 'none' },
-    { id: 'is_empty', label: 'Vazio', aridade: 0, editor: 'none' }
+    ...PRESENCA
   ],
   'field:date': [
     { id: 'after', label: 'depois de', aridade: 1, editor: 'calendar' },
     { id: 'before', label: 'antes de', aridade: 1, editor: 'calendar' },
     { id: 'on', label: 'em', aridade: 1, editor: 'calendar' },
     { id: 'between', label: 'entre', aridade: 2, editor: 'calendar' },
-    { id: 'has_any_value', label: 'Possui algum valor', aridade: 0, editor: 'none' },
-    { id: 'is_empty', label: 'Vazio', aridade: 0, editor: 'none' }
+    ...PRESENCA
   ],
   'field:number': [
     { id: 'is', label: 'É', aridade: 1, editor: 'number' },
@@ -99,8 +124,7 @@ export const OPERADORES = Object.freeze({
     { id: 'greater_than', label: 'maior que', aridade: 1, editor: 'number' },
     { id: 'less_than', label: 'menor que', aridade: 1, editor: 'number' },
     { id: 'between', label: 'entre', aridade: 2, editor: 'number' },
-    { id: 'has_any_value', label: 'Possui algum valor', aridade: 0, editor: 'none' },
-    { id: 'is_empty', label: 'Vazio', aridade: 0, editor: 'none' }
+    ...PRESENCA
   ]
 })
 
@@ -281,6 +305,10 @@ export function migraRegra(r) {
     field,
     field_source,
     field_type: 'text',
+    // ⚠️ O `exists` LEGADO não é o `exists` novo: no formato antigo ele queria
+    // dizer "tem conteúdo", que hoje se chama `has_any_value`. Traduzir para o
+    // homônimo mudaria o sentido de regra publicada — são namespaces distintos,
+    // um é op do grafo antigo, o outro é operador do catálogo.
     op: op === 'exists' ? 'has_any_value' : OPS_TEXTO_LEGADOS[op]
   }
   if (!c.op) return legado

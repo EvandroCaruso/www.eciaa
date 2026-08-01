@@ -896,11 +896,14 @@ onBeforeUnmount(() => {
               title="Organizar blocos (Shift+Alt+O)"
               @click="organizar"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-                <rect x="1.5" y="9" width="6" height="6" rx="1.5" />
-                <rect x="16.5" y="2.5" width="6" height="6" rx="1.5" />
-                <rect x="16.5" y="15.5" width="6" height="6" rx="1.5" />
-                <path d="M7.5 12h4M11.5 12V5.5h5M11.5 12v6.5h5" />
+              <!-- VASSOURA. Os três retângulos ligados por chaves que estavam aqui
+                   liam como cadeado no tamanho real do controle (Evandro, 31/07) —
+                   e "trancar" é o oposto do que o botão faz. -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 3.2 12.4 10.8" />
+                <path d="M13.4 7.6 16.4 10.6" />
+                <path d="M12.2 10 4.4 17.8 7.8 21.2 15.6 13.4 Z" />
+                <path d="M7.4 14.8 10.8 18.2" />
               </svg>
             </ControlButton>
           </Controls>

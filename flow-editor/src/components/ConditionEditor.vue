@@ -13,7 +13,11 @@
  * Na homologação isso se mostrou indistinguível de não salvar — e no caso das
  * listas era perda de dado de verdade, porque o texto digitado morava na caixa de
  * busca e só virava valor com um clique em "selecionar «texto»". Agora: ✓ salva,
- * ✗ cancela, clicar fora é ✗, e o rascunho sujo pergunta antes de ir embora.
+ * ✗ cancela (perguntando), clicar fora SALVA, e até desmontar salva.
+ *
+ * ⚠️ O clique-fora salvava? Não: na primeira volta ele cancelava, e na
+ * homologação isso ainda perdia texto. A regra final é assimétrica de propósito —
+ * SALVAR é o default de tudo, e descartar exige o ✗ vermelho mais uma pergunta.
  *
  * O rascunho local também é o que faz o Ctrl+Z contar UM passo por popover: o
  * histórico guarda o grafo inteiro a cada update, e emitir por tecla encheria o
@@ -71,18 +75,32 @@ function setExact(marcado) {
   else delete rascunho.value.exact
 }
 
+// Trava de mão única: depois que o popover decidiu (salvou ou descartou), o
+// gancho de desmontagem não pode decidir de novo.
+let finalizado = false
+
 function confirmar() {
+  finalizado = true
   emit('update', rascunho.value)
   emit('close')
 }
 
-/** ✗, Esc e clique-fora caem aqui. Só some sem perguntar se nada mudou. */
+/**
+ * ✗ é o ÚNICO jeito de perder o que foi digitado, e ainda assim ele pergunta.
+ *
+ * ⚠️ Clicar fora NÃO cai mais aqui (mudança do Evandro, 31/07). O par ✓/✗ deixa
+ * o gesto explícito disponível, mas quem clica fora está mudando de assunto, não
+ * pedindo para apagar — e perder texto por isso é o defeito que originou esta
+ * rodada inteira. Agora clicar fora SALVA.
+ */
 function cancelar() {
   if (sujo.value) { perguntandoDescarte.value = true; return }
+  finalizado = true
   emit('close')
 }
 
 function descartar() {
+  finalizado = true
   perguntandoDescarte.value = false
   emit('close')
 }
@@ -102,7 +120,8 @@ function escolheuNaLista(rotulo) {
 function foraDaCaixa(e) {
   if (!caixa.value || caixa.value.contains(e.target)) return
   if (props.gatilho && props.gatilho.contains(e.target)) return
-  cancelar()
+  // clicar fora SALVA — ver o comentário de `cancelar()`
+  confirmar()
 }
 
 function noTeclado(e) {
@@ -150,6 +169,13 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', noTeclado)
   window.removeEventListener('scroll', onScroll, true)
   window.removeEventListener('resize', regruda)
+
+  // ⚠️ Rede de segurança. Clicar no CANVAS deseleciona o bloco, o painel de
+  // propriedades some e leva este popover junto — sem passar por ✓, ✗ nem pelo
+  // clique-fora, porque o componente é destruído antes. Era por aqui que o texto
+  // digitado sumia mesmo depois de o clique-fora passar a salvar. Se ninguém
+  // decidiu e há alteração, ela vai para o grafo: perder é sempre pior.
+  if (!finalizado && sujo.value) emit('update', rascunho.value)
 })
 </script>
 

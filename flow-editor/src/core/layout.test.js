@@ -139,3 +139,53 @@ describe('jaOrganizado', () => {
     expect(jaOrganizado(g)).toBe(false)
   })
 })
+
+describe('distribuição proporcional do espaço (31/07)', () => {
+  const ALT = 96 // ALTURA_PADRAO
+  const centro = (g, nome) => g.nodes.find((n) => n.name === nome).position[1] + ALT / 2
+
+  it('duas saídas abrem em leque SIMÉTRICO em volta do pai', () => {
+    const g = organizarGrafo(grafo(['A', 'V', 'F'], [['A', 'V', 0], ['A', 'F', 1]]))
+    const desvio = Math.abs((centro(g, 'V') + centro(g, 'F')) / 2 - centro(g, 'A'))
+    expect(desvio).toBeLessThanOrEqual(1)
+    // e a saída 0 continua acima da saída 1
+    expect(centro(g, 'V')).toBeLessThan(centro(g, 'F'))
+  })
+
+  it('três saídas também ficam centradas no pai, com a do meio alinhada a ele', () => {
+    const g = organizarGrafo(grafo(
+      ['A', 'X', 'Y', 'Z'],
+      [['A', 'X', 0], ['A', 'Y', 1], ['A', 'Z', 2]]
+    ))
+    expect(Math.abs(centro(g, 'Y') - centro(g, 'A'))).toBeLessThanOrEqual(1)
+    expect(centro(g, 'X')).toBeLessThan(centro(g, 'Y'))
+    expect(centro(g, 'Y')).toBeLessThan(centro(g, 'Z'))
+  })
+
+  it('um pai com filho único fica NA MESMA linha do filho, sem degrau', () => {
+    // era o efeito colateral de centrar cada coluna no global: colunas de
+    // tamanhos diferentes desalinhavam pai e filho de um ramo linear
+    const g = organizarGrafo(grafo(
+      ['A', 'B', 'C', 'D', 'E'],
+      [['A', 'B', 0], ['A', 'C', 1], ['C', 'D'], ['D', 'E']]
+    ))
+    expect(centro(g, 'D')).toBe(centro(g, 'C'))
+    expect(centro(g, 'E')).toBe(centro(g, 'D'))
+  })
+
+  it('ramos que voltam a se juntar deixam o nó de junção entre os dois', () => {
+    const g = organizarGrafo(grafo(
+      ['A', 'V', 'F', 'J'],
+      [['A', 'V', 0], ['A', 'F', 1], ['V', 'J'], ['F', 'J']]
+    ))
+    expect(centro(g, 'J')).toBeGreaterThan(centro(g, 'V'))
+    expect(centro(g, 'J')).toBeLessThan(centro(g, 'F'))
+  })
+
+  it('continua determinístico — jaOrganizado nao gasta passo de desfazer', () => {
+    const base = grafo(['A', 'V', 'F'], [['A', 'V', 0], ['A', 'F', 1]])
+    const uma = organizarGrafo(base)
+    expect(jaOrganizado(uma)).toBe(true)
+    expect(JSON.stringify(organizarGrafo(uma))).toBe(JSON.stringify(uma))
+  })
+})
