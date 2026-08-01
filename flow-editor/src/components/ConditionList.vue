@@ -16,7 +16,7 @@
 import { ref, computed, onMounted } from 'vue'
 import {
   normalizeParameters, withConditions, addCondition, updateCondition, removeCondition,
-  rotuloLogica, fraseVerdadeiro, fraseFalso, avisoRuntime, tipoDeCampo
+  rotuloLogica, fraseVerdadeiro, fraseFalso, tipoDeCampo
 } from '../core/condition.js'
 import { resumoCondicao } from '../core/preview.js'
 import { fetchContactFields, fetchConditionCatalog } from '../lib/api.js'
@@ -121,7 +121,12 @@ const avisos = computed(() =>
   [campos.value.client_error, catalogo.value.labels_error, catalogo.value.agents_error].filter(Boolean)
 )
 
-const aviso = computed(() => avisoRuntime(props.parameters, props.schema))
+// ⚠️ Sem aviso de runtime aqui. Ele dizia que o bloco "sempre segue pela saída
+// Verdadeiro porque o runtime ainda não avalia" — vocabulário de execução numa
+// tela de construção. O que se monta aqui é uma máscara, e máscara não é
+// verdadeira nem falsa (ver `principio-mascara.md` no vault). A lacuna do
+// executor está registrada no `dicionario-executor.md`, que é onde ela é de
+// alguém. Removido em 2026-07-31, a pedido do Evandro.
 
 function aplicar(novas) {
   emit('update', withConditions(props.parameters, novas))
@@ -171,8 +176,6 @@ const emEdicao = computed(() =>
 
 <template>
   <div class="mf-cl">
-    <div v-if="aviso" class="mf-cl__aviso">⚠️ {{ aviso }}</div>
-
     <p class="mf-cl__logica">Lógica <strong>{{ rotuloLogica(mode) }}</strong></p>
 
     <div v-if="conditions.length" class="mf-cl__saida">{{ fraseVerdadeiro(mode) }}</div>

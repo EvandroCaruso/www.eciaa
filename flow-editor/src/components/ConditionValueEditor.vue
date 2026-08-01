@@ -53,6 +53,24 @@ function escolher(v, rotulo) {
   emit('escolheu', rotulo)
 }
 
+/**
+ * Digitar na busca de ETIQUETA já alimenta o rascunho.
+ *
+ * ⚠️ Era aqui a perda de dado da homologação de 31/07: o texto vivia só no
+ * `busca` e virava valor exclusivamente com um clique em "selecionar «texto»";
+ * quem digitava e clicava fora perdia tudo, sem aviso. Agora o ✓ do rodapé salva
+ * o que está escrito, como em qualquer campo.
+ *
+ * ⚠️ Vale só para `label-list`, onde o valor É o texto (o `title` da etiqueta).
+ * Em `agent-list` o valor é o ID NUMÉRICO do membro: ligar o texto ali gravaria
+ * um nome onde o executor espera número, e a condição morreria em runtime.
+ */
+function digitouNaBusca() {
+  if (props.editor !== 'label-list') return
+  const q = busca.value.trim()
+  if (q) emit('update:modelValue', q)
+}
+
 /** No par (entre), cada ponta é atualizada sem apagar a outra. */
 function setPonta(i, v) {
   const atual = Array.isArray(props.modelValue) ? [...props.modelValue] : ['', '']
@@ -91,6 +109,7 @@ onMounted(async () => {
         class="mf-cv__busca"
         placeholder="Pesquisar ou inserir valor"
         :disabled="readonly"
+        @input="digitouNaBusca"
       />
 
       <div class="mf-cv__lista">

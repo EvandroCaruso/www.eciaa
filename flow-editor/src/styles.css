@@ -187,3 +187,28 @@ body {
 }
 .mf-modal h3 { margin: 0 0 16px; font-size: 15px; }
 .mf-modal__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+/* ---------------------------------------------------------------------------
+   Par CONFIRMAR / CANCELAR — padrão único do construtor de fluxos
+   ---------------------------------------------------------------------------
+   ✓ verde salva, ✗ vermelho cancela, sempre nesta ordem e sempre no mesmo canto.
+   Vive aqui, e não dentro de um componente, porque é padrão de TODOS os blocos
+   (Condição, Conteúdo e os que ainda vão nascer): pendurar a regra visual num
+   SFC faria o próximo bloco depender de um import para ficar parecido.
+   Contrato em `padroes-de-edicao.md`, no vault.
+--------------------------------------------------------------------------- */
+.mf-confirm { display: flex; gap: 6px; margin-left: auto; }
+.mf-confirm__btn {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.mf-confirm__btn:disabled { opacity: .5; cursor: default; }
+.mf-confirm__btn--ok { background: #1f7a45; border-color: #2f9c5c; color: #fff; }
+.mf-confirm__btn--ok:hover:not(:disabled) { background: #268a4f; }
+.mf-confirm__btn--x { background: #8c2b2b; border-color: #b03a3a; color: #fff; }
+.mf-confirm__btn--x:hover:not(:disabled) { background: #a03232; }

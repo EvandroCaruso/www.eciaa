@@ -20,7 +20,8 @@ import {
   rotuloLogica,
   fraseVerdadeiro,
   fraseFalso,
-  avisoRuntime
+  aceitaExact,
+  normalizaTexto
 } from './condition.js'
 
 describe('catálogo de operadores', () => {
@@ -51,8 +52,9 @@ describe('catálogo de operadores', () => {
     const ids = new Set()
     for (const lista of Object.values(OPERADORES)) for (const op of lista) ids.add(op.id)
     expect([...ids].sort()).toEqual([
-      'after', 'before', 'between', 'contains', 'greater_than', 'has_any_value',
-      'inside', 'is', 'is_not', 'less_than', 'not_contains', 'on', 'outside', 'starts_with'
+      'after', 'before', 'between', 'contains', 'ends_with', 'greater_than',
+      'has_any_value', 'inside', 'is', 'is_empty', 'is_not', 'less_than',
+      'not_contains', 'on', 'outside', 'starts_with'
     ])
   })
 
@@ -298,30 +300,102 @@ describe('rótulos derivados do modo', () => {
   })
 
   it('as frases das saídas mudam com o modo', () => {
-    expect(fraseVerdadeiro('ANY')).toMatch(/UMA/)
-    expect(fraseVerdadeiro('ALL')).toMatch(/TODAS/)
-    expect(fraseFalso('ANY')).toMatch(/NENHUMA/)
+    expect(fraseVerdadeiro('ANY')).toBe('Corresponde a UMA das opções')
+    expect(fraseVerdadeiro('ALL')).toBe('Corresponde a TODAS as condições')
+    expect(fraseFalso('ANY')).toBe('Não corresponde a UMA das opções')
+    expect(fraseFalso('ALL')).toBe('Não corresponde a TODAS as condições')
+  })
+
+  it('as saídas falam de CORRESPONDÊNCIA, nunca de verdadeiro/falso', () => {
+    // Vocabulário de runtime numa tela de construção foi o que fez a homologação
+    // de 31/07 parar: aqui se monta uma máscara, e máscara não tem valor lógico
+    // até o executor perguntá-la a um contato (principio-mascara.md, no vault).
+    for (const mode of ['ALL', 'ANY']) {
+      for (const frase of [fraseVerdadeiro(mode), fraseFalso(mode)]) {
+        expect(frase.toLowerCase()).not.toMatch(/verdadeir|fals/)
+        expect(frase).toMatch(/orresponde/)
+      }
+    }
+  })
+
+  it('a saída de baixo é a NEGAÇÃO literal da de cima, não uma frase própria', () => {
+    // "Não corresponde a NENHUMA condição" (o texto antigo do modo ANY) diz outra
+    // coisa: a regra é declarada só para a correspondência, e o complemento dela
+    // nunca é reescrito à mão.
+    for (const mode of ['ALL', 'ANY']) {
+      expect(fraseFalso(mode).toLowerCase()).toBe('não ' + fraseVerdadeiro(mode).toLowerCase())
+    }
   })
 })
 
-describe('avisoRuntime', () => {
-  const schema = { runtime_warning: 'o runtime ainda não avalia' }
+describe('comparação de texto — caixa e acento', () => {
+  const texto = { subject: 'field', field: 'x', field_type: 'text', op: 'contains' }
 
-  it('avisa quando há conditions — o executor as ignora inteiras', () => {
-    expect(avisoRuntime({ conditions: [{ id: 'a', subject: 'label', op: 'is', value: 'x' }] }, schema))
-      .toBe('o runtime ainda não avalia')
+  it('a caixa cai SEMPRE, com exact ou sem', () => {
+    expect(normalizaTexto('Preço', false)).toBe(normalizaTexto('preço', false))
+    expect(normalizaTexto('Preço', true)).toBe(normalizaTexto('preço', true))
   })
 
-  it('é null com lista vazia e com rules legado', () => {
-    // o aviso anterior deste projeto morreu por acusar demais: ele apontava o
-    // sub-bloco delay, que o runtime HONRA. Aqui só acusa o que muda de fato.
-    expect(avisoRuntime({ conditions: [] }, schema)).toBe(null)
-    expect(avisoRuntime({}, schema)).toBe(null)
-    expect(avisoRuntime({ rules: [{ attr: 'contact.labels', op: 'equals', value: 'x' }] }, schema)).toBe(null)
+  it('sem exact o acento também cai — é o padrão do projeto', () => {
+    const alvo = normalizaTexto('anuncio', false)
+    for (const grafia of ['anúncio', 'anùncio', 'ANÚNCIO', ' Anúncio ']) {
+      expect(normalizaTexto(grafia, false)).toBe(alvo)
+    }
+    expect(normalizaTexto('não', false)).toBe(normalizaTexto('nao', false))
   })
 
-  it('sem texto no schema não há aviso — é assim que ele morre por UPDATE, sem build', () => {
-    expect(avisoRuntime({ conditions: [{ id: 'a', subject: 'label' }] }, {})).toBe(null)
-    expect(avisoRuntime({ conditions: [{ id: 'a', subject: 'label' }] }, null)).toBe(null)
+  it('com exact o acento passa a importar', () => {
+    expect(normalizaTexto('anúncio', true)).not.toBe(normalizaTexto('anuncio', true))
+  })
+
+  it('cedilha e trema são diacríticos como os outros', () => {
+    expect(normalizaTexto('serviço', false)).toBe('servico')
+    expect(normalizaTexto('Müller', false)).toBe('muller')
+  })
+
+  it('nulo e indefinido não explodem — viram vazio', () => {
+    expect(normalizaTexto(null, false)).toBe('')
+    expect(normalizaTexto(undefined, true)).toBe('')
+  })
+
+  it('só texto digitado aceita o check Idêntico', () => {
+    expect(aceitaExact(texto)).toBe(true)
+    expect(aceitaExact({ ...texto, op: 'ends_with' })).toBe(true)
+    // aridade 0 não compara grafia nenhuma
+    expect(aceitaExact({ ...texto, op: 'has_any_value' })).toBe(false)
+    expect(aceitaExact({ ...texto, op: 'is_empty' })).toBe(false)
+    // data e número comparam valor tipado, não escrita
+    expect(aceitaExact({ ...texto, field_type: 'date', op: 'on' })).toBe(false)
+    expect(aceitaExact({ ...texto, field_type: 'number', op: 'is' })).toBe(false)
+    // etiqueta vem da lista viva do cwmkt: não há grafia para a pessoa decidir
+    expect(aceitaExact({ subject: 'label', op: 'is' })).toBe(false)
+  })
+
+  it('trocar para um operador sem grafia APAGA o exact', () => {
+    const c = { ...texto, value: 'anúncio', exact: true }
+    expect(trocaOperador(c, 'is_empty').exact).toBeUndefined()
+    // e preserva onde ainda faz sentido
+    expect(trocaOperador(c, 'starts_with').exact).toBe(true)
+  })
+})
+
+describe('operadores novos de 31/07', () => {
+  it('texto ganhou Termina Com', () => {
+    expect(OPERADORES['field:text'].map((o) => o.id)).toContain('ends_with')
+    expect(labelOperador('ends_with')).toBe('Termina Com')
+  })
+
+  it('Vazio existe nos TRÊS tipos de campo, como complemento de Possui algum valor', () => {
+    for (const k of ['field:text', 'field:date', 'field:number']) {
+      const ids = OPERADORES[k].map((o) => o.id)
+      expect(ids).toContain('is_empty')
+      expect(ids).toContain('has_any_value')
+    }
+  })
+
+  it('Vazio não pede valor, então nunca está incompleta', () => {
+    const c = { subject: 'field', field: 'x', field_type: 'text', op: 'is_empty' }
+    expect(operadorSpec(c).aridade).toBe(0)
+    expect(condicaoIncompleta(c)).toBe(false)
   })
 })

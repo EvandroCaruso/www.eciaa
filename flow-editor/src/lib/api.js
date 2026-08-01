@@ -221,25 +221,21 @@ const MOCK_TYPES = [
     // e o desenvolvimento acontece contra uma tela que não existe em produção.
     node_type: 'eciaa.condition', type_version: 2, label: 'Condição', category: 'logic',
     icon: '🔀', color: '#f59e0b',
-    // ⚠️ A ORDEM das saídas é o índice em connections.main: 0 = Verdadeiro.
-    // Reordenar aqui quebra todo fluxo publicado.
-    outputs: [{ key: 'true', label: 'Verdadeiro' }, { key: 'false', label: 'Falso' }],
+    // ⚠️ A ORDEM das saídas é o índice em connections.main: 0 = a correspondência.
+    // Reordenar aqui quebra todo fluxo publicado. Os RÓTULOS destas duas saídas
+    // são recalculados no card conforme o `mode` (core/condition.js) — o que fica
+    // aqui é só a chave e um texto de reserva.
+    outputs: [{ key: 'true', label: 'Corresponde' }, { key: 'false', label: 'Não corresponde' }],
     params_schema: {
-      help: 'O fluxo se divide aqui: quem atende às condições sai pela saída Verdadeiro; o resto, pela Falso.',
-      // O aviso mora no catálogo (e não no código) para poder ser apagado por um
-      // UPDATE no dia em que o executor aprender a ler conditions[] — sem build,
-      // sem commit, sem virar o ASSET_JS. Da última vez, tirar um aviso da tela
-      // custou um ciclo inteiro de publicação.
-      runtime_warning: 'O runtime ainda não avalia estas condições. Por enquanto este bloco sempre segue pela saída Verdadeiro — a saída Falso não é usada. Publicar é permitido; o que ainda não acontece é o desvio.',
+      help: 'O fluxo se divide aqui: quem corresponde às condições sai por cima; o resto, por baixo.',
       fields: [
         { key: 'mode', type: 'radio', label: '', default: 'ALL',
           options: [
-            { value: 'ALL', label: 'Contato corresponde a TODAS condições' },
-            { value: 'ANY', label: 'Contato corresponde a QUALQUER condição' }
+            { value: 'ALL', label: 'Corresponde a TODAS as condições' },
+            { value: 'ANY', label: 'Corresponde a UMA das opções' }
           ] },
         { key: 'conditions', type: 'condition-list', label: '', default: [],
           add_label: 'Selecionar Condição',
-          empty_help: 'Sem condições, o bloco sempre segue pela saída Verdadeiro.',
           // O catálogo diz QUAIS sujeitos aparecem, com que rótulo e em que ordem.
           // Os OPERADORES de cada um vivem em core/condition.js: o id do operador
           // é a instrução que o executor executa, não texto de tela.

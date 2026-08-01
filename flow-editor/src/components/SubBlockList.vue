@@ -257,9 +257,17 @@ watch(usaNumeroConectado, (usa) => {
           <div v-else-if="campo.help" class="mf-help">{{ campo.help }}</div>
         </div>
 
+        <!-- MESMO par ✗/✓ do bloco Condição, mesmas cores e mesma ordem: o gesto
+             de confirmar se aprende uma vez e vale em todo o construtor
+             (ver `padroes-de-edicao.md` no vault) -->
         <div class="mf-sb__botoes">
-          <button class="mf-btn mf-btn--ghost mf-btn--sm" @click="cancelar">Cancelar</button>
-          <button class="mf-btn mf-btn--sm mf-btn--primary" :disabled="readonly" @click="salvar">Salvar</button>
+          <button class="mf-confirm__btn mf-confirm__btn--x" title="Cancelar a edição (Esc)" @click="cancelar">✕</button>
+          <button
+            class="mf-confirm__btn mf-confirm__btn--ok"
+            title="Salvar"
+            :disabled="readonly"
+            @click="salvar"
+          >✓</button>
         </div>
       </div>
     </div>

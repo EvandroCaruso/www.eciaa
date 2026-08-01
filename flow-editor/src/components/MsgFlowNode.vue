@@ -4,7 +4,7 @@ import { Handle, Position } from '@vue-flow/core'
 import { handleIdFor } from '../core/graph.js'
 import { linhasDoBloco, linhasDaCondicao } from '../core/preview.js'
 import { subTypesFrom } from '../core/subblocks.js'
-import { normalizeParameters, sujeitosDoCampo, fraseVerdadeiro } from '../core/condition.js'
+import { normalizeParameters, sujeitosDoCampo, fraseVerdadeiro, fraseFalso } from '../core/condition.js'
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -18,7 +18,25 @@ const acoes = inject('msgflowAcoes', null)
 
 const spec = computed(() => props.data.spec || {})
 const color = computed(() => spec.value.color || 'var(--accent)')
-const outputs = computed(() => spec.value.outputs || [{ key: 'main', label: '' }])
+/**
+ * Rótulos das saídas.
+ *
+ * ⚠️ Na Condição eles NÃO vêm do `params_schema`: "Verdadeiro"/"Falso" é estático
+ * e é vocabulário de runtime, enquanto a frase certa depende do `mode` (TODAS ×
+ * UMA) e fala de CORRESPONDÊNCIA — que é o que a pessoa está construindo. As duas
+ * frases saem de core/condition.js, a mesma fonte do painel: escrevê-las aqui de
+ * novo é como nasceu o `labelOp()` divergente.
+ */
+const outputs = computed(() => {
+  const base = spec.value.outputs || [{ key: 'main', label: '' }]
+  if (props.data.nodeType !== 'eciaa.condition') return base
+  const mode = normalizeParameters(props.data.parameters || {}).mode
+  return base.map((o) =>
+    o.key === 'true' ? { ...o, label: fraseVerdadeiro(mode) }
+    : o.key === 'false' ? { ...o, label: fraseFalso(mode) }
+    : o
+  )
+})
 const schema = computed(() => spec.value.params_schema || {})
 const isStart = computed(() => props.data.nodeType === 'eciaa.start')
 const podeExcluir = computed(() => schema.value.deletable !== false)
@@ -55,11 +73,9 @@ const linhas = computed(() => {
   return []
 })
 
-/** Frase da saída Verdadeiro, no topo do corpo — muda com o modo E/Ou. */
-const cabecalhoCondicao = computed(() => {
-  if (props.data.nodeType !== 'eciaa.condition' || !linhas.value.length) return ''
-  return fraseVerdadeiro(normalizeParameters(props.data.parameters || {}).mode)
-})
+// O cabeçalho que repetia a frase da saída saiu: agora ela é o RÓTULO da própria
+// saída, logo abaixo da lista. Dizer duas vezes a mesma coisa no mesmo card só
+// fazia o bloco crescer.
 </script>
 
 <template>
@@ -91,7 +107,6 @@ const cabecalhoCondicao = computed(() => {
     </div>
 
     <div v-if="linhas.length" class="mf-node__body has-outputs mf-node__body--linhas">
-      <span v-if="cabecalhoCondicao" class="mf-node__cab">{{ cabecalhoCondicao }}</span>
       <span v-for="(l, i) in linhas" :key="i" :title="l">{{ l }}</span>
     </div>
     <div v-else class="mf-node__body has-outputs">{{ preview }}</div>

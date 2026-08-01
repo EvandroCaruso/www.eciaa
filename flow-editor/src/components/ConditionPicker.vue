@@ -55,7 +55,24 @@ function foraDaCaixa(e) {
 function noEsc(e) {
   if (e.key === 'Escape') { e.stopPropagation(); emit('close') }
 }
-function onWindowChange() { emit('close') }
+
+/**
+ * ⚠️ O listener é de CAPTURA na window (scroll não borbulha), então ele enxerga
+ * também o scroll da lista AQUI DENTRO. Fechar sem checar a origem fazia a lista
+ * se autodestruir ao rolar o mouse ou ao arrastar a barra — o defeito relatado na
+ * homologação de 31/07. Rolagem interna é navegação, não movimento da página.
+ */
+function onScroll(e) {
+  if (caixa.value && e.target && caixa.value.contains(e.target)) return
+  regruda()
+}
+
+/** A página andou: em vez de fechar, o popover volta a colar no gatilho. */
+function regruda() {
+  const el = props.gatilho
+  if (!el || !el.getBoundingClientRect) return emit('close')
+  pos.value = posicionaNoDom(el.getBoundingClientRect(), caixa.value, { alinha: 'direita' })
+}
 
 onMounted(async () => {
   await nextTick()
@@ -64,14 +81,14 @@ onMounted(async () => {
   // o clique que ABRE já terminou quando este listener entra, então não fecha na sequência
   document.addEventListener('mousedown', foraDaCaixa)
   document.addEventListener('keydown', noEsc)
-  window.addEventListener('scroll', onWindowChange, true)
-  window.addEventListener('resize', onWindowChange)
+  window.addEventListener('scroll', onScroll, true)
+  window.addEventListener('resize', regruda)
 })
 onBeforeUnmount(() => {
   document.removeEventListener('mousedown', foraDaCaixa)
   document.removeEventListener('keydown', noEsc)
-  window.removeEventListener('scroll', onWindowChange, true)
-  window.removeEventListener('resize', onWindowChange)
+  window.removeEventListener('scroll', onScroll, true)
+  window.removeEventListener('resize', regruda)
 })
 </script>
 

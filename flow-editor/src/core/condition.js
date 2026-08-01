@@ -81,14 +81,17 @@ export const OPERADORES = Object.freeze({
     { id: 'contains', label: 'Contém', aridade: 1, editor: 'text' },
     { id: 'not_contains', label: 'Não Contém', aridade: 1, editor: 'text' },
     { id: 'starts_with', label: 'Começa Com', aridade: 1, editor: 'text' },
-    { id: 'has_any_value', label: 'Possui algum valor', aridade: 0, editor: 'none' }
+    { id: 'ends_with', label: 'Termina Com', aridade: 1, editor: 'text' },
+    { id: 'has_any_value', label: 'Possui algum valor', aridade: 0, editor: 'none' },
+    { id: 'is_empty', label: 'Vazio', aridade: 0, editor: 'none' }
   ],
   'field:date': [
     { id: 'after', label: 'depois de', aridade: 1, editor: 'calendar' },
     { id: 'before', label: 'antes de', aridade: 1, editor: 'calendar' },
     { id: 'on', label: 'em', aridade: 1, editor: 'calendar' },
     { id: 'between', label: 'entre', aridade: 2, editor: 'calendar' },
-    { id: 'has_any_value', label: 'Possui algum valor', aridade: 0, editor: 'none' }
+    { id: 'has_any_value', label: 'Possui algum valor', aridade: 0, editor: 'none' },
+    { id: 'is_empty', label: 'Vazio', aridade: 0, editor: 'none' }
   ],
   'field:number': [
     { id: 'is', label: 'É', aridade: 1, editor: 'number' },
@@ -96,7 +99,8 @@ export const OPERADORES = Object.freeze({
     { id: 'greater_than', label: 'maior que', aridade: 1, editor: 'number' },
     { id: 'less_than', label: 'menor que', aridade: 1, editor: 'number' },
     { id: 'between', label: 'entre', aridade: 2, editor: 'number' },
-    { id: 'has_any_value', label: 'Possui algum valor', aridade: 0, editor: 'none' }
+    { id: 'has_any_value', label: 'Possui algum valor', aridade: 0, editor: 'none' },
+    { id: 'is_empty', label: 'Vazio', aridade: 0, editor: 'none' }
   ]
 })
 
@@ -128,6 +132,42 @@ export function operadoresDe(c) {
 export function operadorSpec(c, opId = null) {
   const alvo = opId === null ? c && c.op : opId
   return operadoresDe(c).find((o) => o.id === alvo) || null
+}
+
+// ---------------------------------------------------------------------------
+// Comparação de texto — a chave `exact`
+// ---------------------------------------------------------------------------
+
+/**
+ * A condição compara TEXTO DIGITADO, e portanto aceita o check "Idêntico"?
+ *
+ * Só os operadores de `field:text` com aridade 1. `has_any_value` e `Vazio` não
+ * comparam grafia nenhuma; data e número comparam valor tipado, não escrita.
+ *
+ * ⚠️ `label` fica de fora de propósito: o valor vem da lista viva do cwmkt, então
+ * a grafia já é a do próprio sistema. Etiqueta é SEMPRE comparada sem caixa e sem
+ * acento — não há o que a pessoa decidir ali.
+ */
+export function aceitaExact(c) {
+  if (!c || c.subject !== 'field') return false
+  if (tipoDeCampo(c.field_type) !== 'text') return false
+  const spec = operadorSpec(c)
+  return !!spec && spec.aridade === 1
+}
+
+/**
+ * DEFINIÇÃO CANÔNICA da normalização de texto. O executor copia esta função —
+ * está congelada em teste aqui e transcrita no dicionário do executor.
+ *
+ * ⚠️ O editor NÃO compara nada (ver principio-mascara): isto vive aqui para ter
+ * UM lugar onde a regra é escrita e testada, não porque a tela avalie condição.
+ *
+ * Caixa cai SEMPRE. Acento só cai quando `exact` é falso — que é o padrão, porque
+ * no WhatsApp o contato digita "nao" e "anuncio" na maior parte das vezes.
+ */
+export function normalizaTexto(s, exact) {
+  const t = String(s ?? '').trim().toLowerCase()
+  return exact ? t : t.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }
 
 /**
@@ -271,9 +311,8 @@ export function normalizeParameters(parameters) {
  * Ponto único de escrita. APAGA a chave `rules`.
  *
  * ⚠️ Manter `rules` faria o Executor v0 avaliar a regra velha enquanto a tela
- * mostra a nova — o que se vê e o que roda divergindo em silêncio. Apagando, ele
- * cai em "sem regra → Verdadeiro + warning", que é exatamente o que o aviso da
- * tela promete que acontece hoje.
+ * mostra a nova — o que se vê e o que roda divergindo em silêncio. Apagando, o
+ * bloco passa a ser lido por uma chave só, e a lacuna do runtime fica onde é dele.
  */
 export function withConditions(parameters, conditions) {
   const p = { ...(parameters || {}), conditions }
@@ -306,6 +345,9 @@ export function trocaOperador(c, opId) {
   const novo = { ...c, op: opId }
   if (alvo.aridade === 0) delete novo.value
   else if (!antes || antes.aridade !== alvo.aridade) delete novo.value
+  // "Vazio" e "Possui algum valor" não comparam grafia: deixar `exact` gravado ali
+  // seria lixo que um dia alguém lê como se significasse alguma coisa
+  if (!aceitaExact(novo)) delete novo.exact
   return novo
 }
 
@@ -331,38 +373,35 @@ export function rotuloLogica(mode) {
   return mode === 'ANY' ? 'Ou' : 'E'
 }
 
-/** A frase que descreve a saída Verdadeiro, conforme o modo. */
+/**
+ * As frases das duas saídas.
+ *
+ * ⚠️ "Verdadeiro/Falso" é vocabulário de RUNTIME e não pode vazar para a tela de
+ * construção: aqui a pessoa monta um enunciado, não observa um resultado (ver
+ * principio-mascara, no vault). Por isso as saídas descrevem CORRESPONDÊNCIA.
+ *
+ * A regra é declarada só para a correspondência; a não-correspondência é o
+ * complemento dela e nunca se escreve duas vezes.
+ */
 export function fraseVerdadeiro(mode) {
   return mode === 'ANY'
-    ? 'Pelo menos UMA condição abaixo é verdadeira'
-    : 'TODAS as condições abaixo são verdadeiras'
+    ? 'Corresponde a UMA das opções'
+    : 'Corresponde a TODAS as condições'
 }
 
 export function fraseFalso(mode) {
   return mode === 'ANY'
-    ? 'Contato NÃO corresponde a NENHUMA condição'
-    : 'Contato NÃO corresponde a todas as condições'
+    ? 'Não corresponde a UMA das opções'
+    : 'Não corresponde a TODAS as condições'
 }
 
-/**
- * Aviso de runtime.
- *
- * ⚠️ O aviso anterior deste projeto foi removido por disparar demais: acusava
- * também o sub-bloco `delay`, que o runtime HONRA pelo espelho. A regra agora é
- * estreita — avisa só quando o bloco se comportaria diferente do que a tela diz.
- *
- * ⚠️ Olha os parâmetros CRUS de propósito, sem normalizar. Um bloco legado tem
- * `rules[]` no grafo e o executor o avalia CERTO; a tela mostra a conversão, mas
- * enquanto ninguém salvar é a regra velha que roda. Normalizar antes de decidir
- * faria todo bloco antigo ser acusado sem motivo — que é como o aviso anterior
- * deste projeto morreu. O aviso nasce junto com a primeira edição, que é quando
- * `withConditions` apaga o `rules`.
- *
- * O texto mora no `params_schema` para poder ser apagado por UPDATE no dia em que
- * o executor aprender — sem build, sem commit, sem virar o ASSET_JS.
- */
-export function avisoRuntime(parameters, schema) {
-  const conds = parameters && parameters.conditions
-  if (!Array.isArray(conds) || !conds.length) return null
-  return (schema && schema.runtime_warning) || null
-}
+// ⚠️ `avisoRuntime()` foi REMOVIDO em 2026-07-31, por decisão do Evandro.
+//
+// Ele punha na tela de construção o texto "o runtime ainda não avalia estas
+// condições — este bloco sempre segue pela saída Verdadeiro". Isso confunde
+// DÉBITO DO EXECUTOR com PROPRIEDADE DO EDITOR: quem monta a máscara não tem
+// contato nenhum em mãos, e nada ali é verdadeiro ou falso ainda. Ver
+// `principio-mascara.md` no vault. A lacuna do runtime continua registrada no
+// `dicionario-executor.md`, que é onde ela é de alguém.
+//
+// O `runtime_warning` no `params_schema` fica órfão e é apagado por UPDATE.

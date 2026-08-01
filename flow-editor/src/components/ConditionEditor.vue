@@ -1,6 +1,6 @@
 <script setup>
 /**
- * Popover de DOIS PAINÉIS: operadores à esquerda, valor à direita.
+ * Popover de DOIS PAINÉIS: operadores à esquerda, valor à direita, rodapé embaixo.
  *
  * ⚠️ Teleport + position:fixed, não absolute. O `.mf-props__body` tem
  * `overflow-y: auto`, e overflow vale para os dois eixos: um popover absolute
@@ -8,13 +8,19 @@
  * então não haveria como caber por dentro. A aritmética de flip/clamp está em
  * core/popover.js, testada.
  *
- * Sem botão Salvar, de propósito (decisão do Evandro): escolher já aplica. O
- * rascunho local existe mesmo assim para o Ctrl+Z contar UM passo por popover —
- * o histórico do editor guarda o grafo inteiro serializado a cada update, então
- * emitir por tecla encheria o undo de lixo.
+ * ⚠️ CONFIRMAÇÃO EXPLÍCITA (padrão de 31/07, ver `padroes-de-edicao.md` no vault).
+ * Até 30/07 este popover não tinha botão: "escolher já aplica, clicar fora aplica".
+ * Na homologação isso se mostrou indistinguível de não salvar — e no caso das
+ * listas era perda de dado de verdade, porque o texto digitado morava na caixa de
+ * busca e só virava valor com um clique em "selecionar «texto»". Agora: ✓ salva,
+ * ✗ cancela, clicar fora é ✗, e o rascunho sujo pergunta antes de ir embora.
+ *
+ * O rascunho local também é o que faz o Ctrl+Z contar UM passo por popover: o
+ * histórico guarda o grafo inteiro a cada update, e emitir por tecla encheria o
+ * undo de lixo.
  */
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { operadoresDe, operadorSpec, trocaOperador } from '../core/condition.js'
+import { operadoresDe, operadorSpec, trocaOperador, aceitaExact } from '../core/condition.js'
 import { posicionaNoDom } from '../core/popover.js'
 import ConditionValueEditor from './ConditionValueEditor.vue'
 
@@ -31,11 +37,17 @@ const emit = defineEmits(['update', 'close'])
 
 const caixa = ref(null)
 const pos = ref({ left: -9999, top: -9999, maxHeight: 380 })
-const rascunho = ref(JSON.parse(JSON.stringify(props.condition)))
+const original = JSON.stringify(props.condition)
+const rascunho = ref(JSON.parse(original))
+const perguntandoDescarte = ref(false)
 
 const operadores = computed(() => operadoresDe(rascunho.value))
 const spec = computed(() => operadorSpec(rascunho.value))
 const editor = computed(() => (spec.value ? spec.value.editor : 'none'))
+
+/** O check "Idêntico" só aparece onde há grafia digitada para comparar. */
+const mostraExact = computed(() => aceitaExact(rascunho.value))
+const sujo = computed(() => JSON.stringify(rascunho.value) !== original)
 
 function selecionaOperador(id) {
   if (props.readonly) return
@@ -49,30 +61,77 @@ function setValor(v) {
   else rascunho.value.value = v
 }
 
-/** Escolher numa lista aplica e fecha — é um gesto só, como na referência. */
+/**
+ * `exact` só é GRAVADO quando marcado. Desmarcado é o padrão do projeto, e um
+ * `exact: false` em todo fluxo do banco seria ruído que um dia alguém lê como
+ * decisão consciente.
+ */
+function setExact(marcado) {
+  if (marcado) rascunho.value.exact = true
+  else delete rascunho.value.exact
+}
+
+function confirmar() {
+  emit('update', rascunho.value)
+  emit('close')
+}
+
+/** ✗, Esc e clique-fora caem aqui. Só some sem perguntar se nada mudou. */
+function cancelar() {
+  if (sujo.value) { perguntandoDescarte.value = true; return }
+  emit('close')
+}
+
+function descartar() {
+  perguntandoDescarte.value = false
+  emit('close')
+}
+
+/**
+ * Escolher numa lista JÁ É uma confirmação — é um gesto só, e é o que a pessoa
+ * espera de um menu. O par ✓/✗ existe para o que é DIGITADO.
+ */
 function escolheuNaLista(rotulo) {
   if (rascunho.value.subject === 'assignee') {
     if ('value' in rascunho.value) rascunho.value.value_label = rotulo
     else delete rascunho.value.value_label
   }
-  fechar()
-}
-
-function fechar() {
-  emit('update', rascunho.value)
-  emit('close')
+  confirmar()
 }
 
 function foraDaCaixa(e) {
   if (!caixa.value || caixa.value.contains(e.target)) return
   if (props.gatilho && props.gatilho.contains(e.target)) return
-  fechar()
+  cancelar()
 }
-function noEsc(e) {
-  if (e.key === 'Escape') { e.stopPropagation(); fechar() }
+
+function noTeclado(e) {
+  if (e.key === 'Escape') { e.stopPropagation(); cancelar(); return }
+  // Enter confirma em campo de uma linha; num par (entre) ele também serve, porque
+  // as duas pontas já estão no rascunho
+  if (e.key === 'Enter' && caixa.value && caixa.value.contains(e.target)) {
+    e.preventDefault()
+    e.stopPropagation()
+    confirmar()
+  }
 }
-// Popover fixo não acompanha a rolagem: em vez de recalcular, fecha (aplicando).
-function onWindowChange() { fechar() }
+
+/**
+ * ⚠️ Captura na window enxerga o scroll das listas AQUI DENTRO — scroll não
+ * borbulha. Fechar sem checar a origem fazia o popover se autodestruir ao rolar
+ * o mouse ou arrastar a barra (defeito da homologação de 31/07). E com rascunho
+ * na mão, fechar por rolagem seria perda de dado: a página andar só regruda.
+ */
+function onScroll(e) {
+  if (caixa.value && e.target && caixa.value.contains(e.target)) return
+  regruda()
+}
+
+function regruda() {
+  const el = props.gatilho
+  if (!el || !el.getBoundingClientRect) return
+  pos.value = posicionaNoDom(el.getBoundingClientRect(), caixa.value, { alinha: 'direita' })
+}
 
 async function posicionar() {
   await nextTick()
@@ -82,15 +141,15 @@ async function posicionar() {
 onMounted(async () => {
   await posicionar()
   document.addEventListener('mousedown', foraDaCaixa)
-  document.addEventListener('keydown', noEsc)
-  window.addEventListener('scroll', onWindowChange, true)
-  window.addEventListener('resize', onWindowChange)
+  document.addEventListener('keydown', noTeclado)
+  window.addEventListener('scroll', onScroll, true)
+  window.addEventListener('resize', regruda)
 })
 onBeforeUnmount(() => {
   document.removeEventListener('mousedown', foraDaCaixa)
-  document.removeEventListener('keydown', noEsc)
-  window.removeEventListener('scroll', onWindowChange, true)
-  window.removeEventListener('resize', onWindowChange)
+  document.removeEventListener('keydown', noTeclado)
+  window.removeEventListener('scroll', onScroll, true)
+  window.removeEventListener('resize', regruda)
 })
 </script>
 
@@ -101,29 +160,70 @@ onBeforeUnmount(() => {
       class="mf-ce"
       :style="{ left: pos.left + 'px', top: pos.top + 'px', maxHeight: pos.maxHeight + 'px' }"
     >
-      <div class="mf-ce__ops">
-        <div class="mf-ce__titulo">{{ (titulo || '').toUpperCase() }}</div>
-        <button
-          v-for="op in operadores"
-          :key="op.id"
-          class="mf-ce__op"
-          :class="{ 'is-on': rascunho.op === op.id }"
-          :disabled="readonly"
-          @click="selecionaOperador(op.id)"
-        >{{ op.label }}</button>
+      <div class="mf-ce__corpo">
+        <div class="mf-ce__ops">
+          <div class="mf-ce__titulo">{{ (titulo || '').toUpperCase() }}</div>
+          <button
+            v-for="op in operadores"
+            :key="op.id"
+            class="mf-ce__op"
+            :class="{ 'is-on': rascunho.op === op.id }"
+            :disabled="readonly"
+            @click="selecionaOperador(op.id)"
+          >{{ op.label }}</button>
+        </div>
+
+        <div class="mf-ce__valor">
+          <ConditionValueEditor
+            :key="rascunho.op"
+            :editor="editor"
+            :aridade="spec ? spec.aridade : 0"
+            :model-value="rascunho.value"
+            :catalogo="catalogo"
+            :readonly="readonly"
+            @update:model-value="setValor"
+            @escolheu="escolheuNaLista"
+          />
+        </div>
       </div>
 
-      <div class="mf-ce__valor">
-        <ConditionValueEditor
-          :key="rascunho.op"
-          :editor="editor"
-          :aridade="spec ? spec.aridade : 0"
-          :model-value="rascunho.value"
-          :catalogo="catalogo"
-          :readonly="readonly"
-          @update:model-value="setValor"
-          @escolheu="escolheuNaLista"
-        />
+      <!-- pergunta de descarte ocupa o rodapé: não some da vista nem exige rolar -->
+      <div v-if="perguntandoDescarte" class="mf-ce__rodape mf-ce__rodape--perigo">
+        <span class="mf-ce__pergunta">Descartar o que você alterou?</span>
+        <div class="mf-confirm">
+          <button class="mf-confirm__btn mf-confirm__btn--x" @click="descartar">Descartar</button>
+          <button class="mf-confirm__btn mf-confirm__btn--ok" @click="perguntandoDescarte = false">Voltar</button>
+        </div>
+      </div>
+
+      <div v-else class="mf-ce__rodape">
+        <label v-if="mostraExact" class="mf-ce__exact">
+          <input
+            type="checkbox"
+            :checked="!!rascunho.exact"
+            :disabled="readonly"
+            @change="setExact($event.target.checked)"
+          />
+          <span>Idêntico</span>
+        </label>
+        <span v-if="mostraExact" class="mf-ce__dica">
+          {{ rascunho.exact ? 'acento importa: anúncio ≠ anuncio' : 'anúncio = anuncio = anùncio' }}
+        </span>
+        <span v-else class="mf-ce__dica"></span>
+
+        <div class="mf-confirm">
+          <button
+            class="mf-confirm__btn mf-confirm__btn--x"
+            title="Cancelar a edição (Esc)"
+            @click="cancelar"
+          >✕</button>
+          <button
+            class="mf-confirm__btn mf-confirm__btn--ok"
+            title="Salvar (Enter)"
+            :disabled="readonly"
+            @click="confirmar"
+          >✓</button>
+        </div>
       </div>
     </div>
   </Teleport>
@@ -135,6 +235,7 @@ onBeforeUnmount(() => {
   position: fixed;
   z-index: 60;
   display: flex;
+  flex-direction: column;
   width: 520px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -142,6 +243,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 12px 32px rgba(0, 0, 0, .38);
   overflow: hidden;
 }
+.mf-ce__corpo { display: flex; min-height: 0; flex: 1; }
 .mf-ce__ops {
   width: 200px;
   flex: 0 0 200px;
@@ -169,4 +271,28 @@ onBeforeUnmount(() => {
 .mf-ce__op:hover:not(:disabled) { background: var(--surface2); }
 .mf-ce__op.is-on { color: var(--accent); font-weight: 600; }
 .mf-ce__valor { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+.mf-ce__rodape {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+}
+.mf-ce__rodape--perigo { background: rgba(220, 68, 68, .12); }
+.mf-ce__pergunta { flex: 1; font-size: 12px; color: var(--text); }
+.mf-ce__exact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+.mf-ce__dica { flex: 1; min-width: 0; font-size: 11px; color: var(--text2); }
+/* `.mf-confirm` e `.mf-confirm__btn` NÃO moram aqui: são o padrão ✓/✗ de todo o
+   construtor e vivem em src/styles.css, para o próximo bloco herdá-lo sem importar
+   este componente. Ver `padroes-de-edicao.md` no vault. */
 </style>
