@@ -10,7 +10,7 @@
 import { ref, computed, nextTick, onMounted, onBeforeUnmount, markRaw, provide } from 'vue'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
-import { Controls } from '@vue-flow/controls'
+import { Controls, ControlButton } from '@vue-flow/controls'
 import { MiniMap } from '@vue-flow/minimap'
 
 import MsgFlowNode from './MsgFlowNode.vue'
@@ -21,6 +21,7 @@ import ModalDialog from './ModalDialog.vue'
 
 import { call, crud } from '../lib/api.js'
 import { isFlowNameTaken } from '../core/names.js'
+import { organizarGrafo } from '../core/layout.js'
 import { writeClip, readClip, hasClip } from '../lib/storage.js'
 import {
   createEmptyGraph, addNode, deleteNode, renameNode, connect, disconnect,
@@ -502,10 +503,34 @@ function menuDoCanvas(event) {
       { rotulo: 'Adicionar bloco…', desabilitado: readonly.value, acao: () => { pickerAberto.value = true } },
       { rotulo: 'Colar', atalho: 'Ctrl+V', desabilitado: readonly.value || !hasClip(), acao: () => colar() },
       { separador: true },
+      { rotulo: 'Organizar blocos', atalho: 'Shift+Alt+O', desabilitado: readonly.value || !nodes.value.length, acao: () => organizar() },
       { rotulo: 'Selecionar tudo', atalho: 'Ctrl+A', acao: () => selecionarTudo() },
       { rotulo: 'Enquadrar', acao: () => fitView({ padding: 0.3, maxZoom: 1 }) }
     ]
   }
+}
+
+/**
+ * Organiza os blocos em camadas da esquerda para a direita — o "Tidy up" do n8n.
+ *
+ * As alturas reais dos cards vêm do Vue Flow e entram como parâmetro: o core é
+ * puro e não lê o DOM. Sem elas o layout ainda sai, só menos justo — um bloco de
+ * Conteúdo com seis partes é bem mais alto que um de Início.
+ *
+ * Passa por `apply`, que empilha o desfazer SÓ se algo mudou: clicar num fluxo
+ * que já está arrumado não gasta um passo de Ctrl+Z.
+ */
+function organizar() {
+  if (readonly.value || !nodes.value.length) return
+  const alturas = {}
+  for (const vn of vf.getNodes.value) {
+    const h = vn.dimensions && vn.dimensions.height
+    if (h) alturas[vn.id] = h
+  }
+  const mudou = apply((g) => organizarGrafo(g, { alturas }), selectedName.value ? [selectedName.value] : [])
+  if (!mudou) return
+  setTimeout(() => fitView({ padding: 0.3, maxZoom: 1 }), 60)
+  emit('toast', { type: 'ok', text: 'Blocos organizados. Ctrl+Z desfaz.' })
 }
 
 /** Remove todas as conexões que entram ou saem do nó, mantendo o nó. */
@@ -565,6 +590,14 @@ async function onKeydown(event) {
   if (['input', 'textarea', 'select'].includes(tag)) return
 
   if (event.key === 'Escape') { fecharPopups(); return }
+
+  // Shift+Alt+O organiza. Fora de Ctrl de propósito: Ctrl+O é "abrir arquivo" do
+  // navegador, e este app roda dentro de um iframe do Chatwoot.
+  if (event.shiftKey && event.altKey && (event.key || '').toLowerCase() === 'o') {
+    event.preventDefault()
+    organizar()
+    return
+  }
 
   const ctrl = event.ctrlKey || event.metaKey
   const nomes = selectedNames()
@@ -854,7 +887,23 @@ onBeforeUnmount(() => {
           multi-selection-key-code="Shift"
         >
           <Background :gap="18" :size="1" pattern-color="var(--border)" />
-          <Controls />
+          <Controls>
+            <!-- Organizar entra como mais um controle, na mesma coluna do zoom:
+                 é onde a mão já está quando o fluxo virou espaguete -->
+            <ControlButton
+              class="mf-tidy"
+              :class="{ 'is-off': readonly || !nodes.length }"
+              title="Organizar blocos (Shift+Alt+O)"
+              @click="organizar"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <rect x="1.5" y="9" width="6" height="6" rx="1.5" />
+                <rect x="16.5" y="2.5" width="6" height="6" rx="1.5" />
+                <rect x="16.5" y="15.5" width="6" height="6" rx="1.5" />
+                <path d="M7.5 12h4M11.5 12V5.5h5M11.5 12v6.5h5" />
+              </svg>
+            </ControlButton>
+          </Controls>
           <MiniMap pannable zoomable />
         </VueFlow>
 
@@ -864,6 +913,7 @@ onBeforeUnmount(() => {
           :title="readonly ? 'Você não tem permissão para editar' : 'Adicionar bloco'"
           @click.stop="pickerAberto = !pickerAberto"
         >+</button>
+
 
         <BlockPicker
           v-if="pickerAberto"
@@ -879,7 +929,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="mf-hotkeys">
-          + adicionar · botão direito abre o menu · Ctrl+C/V/D · Del exclui bloco ou conexão · Shift+clique multi-seleção
+          + adicionar · botão direito abre o menu · Shift+Alt+O organiza · Ctrl+C/V/D · Del exclui bloco ou conexão · Shift+clique multi-seleção
         </div>
       </div>
 

@@ -25,6 +25,11 @@
   fill: var(--text2);
 }
 .vue-flow__controls-button:hover { background: var(--surface2); }
+/* Organizar: mesmo corpo dos controles de zoom, com o traço colorido para se
+   distinguir do que é só navegação — ele MUDA o fluxo, os outros não. */
+.vue-flow__controls-button.mf-tidy { fill: none; stroke: var(--accent); }
+.vue-flow__controls-button.mf-tidy svg { width: 14px; height: 14px; }
+.vue-flow__controls-button.mf-tidy.is-off { opacity: .35; pointer-events: none; }
 .vue-flow__minimap { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
 
 /* ---------- o nó ---------- */
