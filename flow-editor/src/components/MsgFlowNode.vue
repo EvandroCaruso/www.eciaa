@@ -5,6 +5,7 @@ import { handleIdFor } from '../core/graph.js'
 import { linhasDoBloco, linhasDaCondicao } from '../core/preview.js'
 import { subTypesFrom } from '../core/subblocks.js'
 import { normalizeParameters, sujeitosDoCampo, fraseVerdadeiro, fraseFalso } from '../core/condition.js'
+import { problemasDoBloco, textoDosProblemas } from '../core/problemas.js'
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -76,6 +77,19 @@ const linhas = computed(() => {
 // O cabeçalho que repetia a frase da saída saiu: agora ela é o RÓTULO da própria
 // saída, logo abaixo da lista. Dizer duas vezes a mesma coisa no mesmo card só
 // fazia o bloco crescer.
+
+/**
+ * ✗ vermelho de pendência — AVISO, nunca bloqueio (Evandro, 01/08).
+ * A regra de o que falta é genérica e mora em core/problemas.js, para valer em
+ * TODO bloco: o catálogo é tabela, então bloco novo nasce coberto sem código aqui.
+ */
+const problemas = computed(() =>
+  problemasDoBloco({
+    nodeType: props.data.nodeType,
+    parameters: props.data.parameters || {},
+    spec: spec.value
+  })
+)
 </script>
 
 <template>
@@ -117,5 +131,13 @@ const linhas = computed(() => {
         <Handle type="source" :position="Position.Right" :id="handleIdFor(i)" />
       </div>
     </div>
+
+    <!-- pendência: avisa, não impede. O balão lista o que falta, item a item -->
+    <div
+      v-if="problemas.length"
+      class="mf-node__warn nodrag"
+      :title="textoDosProblemas(problemas)"
+      :aria-label="textoDosProblemas(problemas)"
+    >✕</div>
   </div>
 </template>

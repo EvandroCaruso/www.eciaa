@@ -52,9 +52,9 @@ describe('catálogo de operadores', () => {
     const ids = new Set()
     for (const lista of Object.values(OPERADORES)) for (const op of lista) ids.add(op.id)
     expect([...ids].sort()).toEqual([
-      'after', 'before', 'between', 'contains', 'ends_with', 'exists',
-      'greater_than', 'has_any_value', 'inside', 'is', 'is_empty', 'is_not',
-      'less_than', 'not_contains', 'not_exists', 'on', 'outside', 'starts_with'
+      'after', 'before', 'between', 'contains', 'ends_with', 'greater_than',
+      'has_any_value', 'inside', 'is', 'is_empty', 'is_not', 'less_than',
+      'not_contains', 'not_exists', 'on', 'outside', 'starts_with'
     ])
   })
 
@@ -385,26 +385,34 @@ describe('operadores novos de 31/07', () => {
     expect(labelOperador('ends_with')).toBe('Termina Com')
   })
 
-  it('os QUATRO operadores de presença existem nos três tipos de campo', () => {
-    // existir e ter conteúdo são perguntas diferentes: a chave pode estar
-    // ausente da ficha, presente em branco, ou presente com conteúdo
-    for (const k of ['field:text', 'field:date', 'field:number']) {
+  it("os TRES operadores de presenca existem nos tres tipos de campo", () => {
+    // existir e ter conteudo sao perguntas diferentes: a chave pode estar
+    // ausente da ficha, presente em branco, ou presente com conteudo
+    for (const k of ["field:text", "field:date", "field:number"]) {
       const ids = OPERADORES[k].map((o) => o.id)
-      for (const p of ['has_any_value', 'is_empty', 'exists', 'not_exists']) {
+      for (const p of ["has_any_value", "is_empty", "not_exists"]) {
         expect(ids).toContain(p)
       }
     }
   })
 
-  it('os quatro de presença não pedem valor e têm o mesmo rótulo em todo tipo', () => {
-    expect(labelOperador('exists')).toBe('Existe')
-    expect(labelOperador('not_exists')).toBe('Não existe')
-    expect(labelOperador('is_empty')).toBe('Vazio')
-    for (const k of ['field:text', 'field:date', 'field:number']) {
+  it("os rotulos de presenca formam uma PARTICAO, sem um Existe generico", () => {
+    // os tres se excluem e cobrem os tres estados; um quarto item que fosse a
+    // uniao de dois faria escolher entre coisas que nao sao alternativas
+    expect(labelOperador("has_any_value")).toBe("Existe com algum valor")
+    expect(labelOperador("is_empty")).toBe("Existe sem conteudo".replace("conteudo", "conteúdo"))
+    expect(labelOperador("not_exists")).toBe("Não existe")
+    for (const k of ["field:text", "field:date", "field:number"]) {
+      expect(OPERADORES[k].map((o) => o.id)).not.toContain("exists")
+    }
+  })
+
+  it("os de presenca nao pedem valor", () => {
+    for (const k of ["field:text", "field:date", "field:number"]) {
       for (const o of OPERADORES[k]) {
-        if (['has_any_value', 'is_empty', 'exists', 'not_exists'].includes(o.id)) {
+        if (["has_any_value", "is_empty", "not_exists"].includes(o.id)) {
           expect(o.aridade).toBe(0)
-          expect(o.editor).toBe('none')
+          expect(o.editor).toBe("none")
         }
       }
     }

@@ -63,20 +63,23 @@ export const DIAS_SEMANA = Object.freeze([
  * "verdadeiro" para campo ausente) faz a pessoa escrever uma pergunta e o
  * executor responder outra.
  *
- *   existe? ──não──> `not_exists` verdadeiro; os outros três, falsos
- *      │sim
- *      └──> `exists` verdadeiro
- *            ├─ em branco ──> `is_empty` verdadeiro
- *            └─ com conteúdo ──> `has_any_value` verdadeiro
+ *   chave ausente        → `not_exists`      ("Não existe")
+ *   presente, em branco  → `is_empty`        ("Existe sem conteúdo")
+ *   presente, preenchida → `has_any_value`   ("Existe com algum valor")
+ *
+ * Os TRÊS rótulos são uma partição: exaustivos e mutuamente exclusivos. Por isso
+ * não existe um "Existe" genérico — ele seria a união de dois destes, e um quarto
+ * item que se sobrepõe aos outros faz a pessoa parar para escolher entre coisas
+ * que não são alternativas. (Ele chegou a ir ao ar em 01/08 e saiu no mesmo dia,
+ * a pedido do Evandro, sem nenhum fluxo tê-lo usado.)
  *
  * ⚠️ Em campo de SISTEMA (nome, telefone, e-mail) a chave praticamente sempre
  * existe: ali `not_exists` quase nunca é verdadeiro, e quem quer "não preencheu"
  * deve usar `is_empty`. A distinção paga o preço dela nos campos do cliente.
  */
 const PRESENCA = Object.freeze([
-  { id: 'has_any_value', label: 'Possui algum valor', aridade: 0, editor: 'none' },
-  { id: 'is_empty', label: 'Vazio', aridade: 0, editor: 'none' },
-  { id: 'exists', label: 'Existe', aridade: 0, editor: 'none' },
+  { id: 'has_any_value', label: 'Existe com algum valor', aridade: 0, editor: 'none' },
+  { id: 'is_empty', label: 'Existe sem conteúdo', aridade: 0, editor: 'none' },
   { id: 'not_exists', label: 'Não existe', aridade: 0, editor: 'none' }
 ])
 

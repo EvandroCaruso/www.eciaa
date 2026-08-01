@@ -263,3 +263,31 @@
   padding: 2px 4px;
 }
 .mf-ctx__sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* ---------------------------------------------------------------------------
+   ✗ de pendência no card — AVISO, não bloqueio (Evandro, 01/08)
+   ---------------------------------------------------------------------------
+   Fica PARA FORA, no canto inferior esquerdo: dentro do card ele disputaria
+   espaço com o rótulo das saídas, que já é a linha mais apertada do bloco.
+   Vermelho porque a cor tem de significar a mesma coisa que o ✗ do rodapé dos
+   editores — os dois dizem "aqui tem coisa por resolver".
+--------------------------------------------------------------------------- */
+.mf-node__warn {
+  position: absolute;
+  left: -9px;
+  bottom: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #b03a3a;
+  border: 2px solid var(--surface);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  z-index: 3;
+}

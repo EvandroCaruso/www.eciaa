@@ -887,7 +887,13 @@ onBeforeUnmount(() => {
           multi-selection-key-code="Shift"
         >
           <Background :gap="18" :size="1" pattern-color="var(--border)" />
-          <Controls>
+          <!-- ⚠️ `show-interactive="false"` tira o CADEADO nativo do Vue Flow.
+               Ele alterna "canvas travado/destravado" e não tem papel aqui: para
+               quem não conhece o controle, clicar sem querer congela o editor sem
+               dizer nada, e o sintoma ("parou de arrastar") não aponta a causa.
+               Também era o botão que o Evandro vinha confundindo com o Organizar
+               (31/07 e 01/08) — dois ícones na mesma coluna, um deles inútil. -->
+          <Controls :show-interactive="false">
             <!-- Organizar entra como mais um controle, na mesma coluna do zoom:
                  é onde a mão já está quando o fluxo virou espaguete -->
             <ControlButton
