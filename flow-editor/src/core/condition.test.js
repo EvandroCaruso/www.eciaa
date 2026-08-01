@@ -20,6 +20,7 @@ import {
   rotuloLogica,
   fraseVerdadeiro,
   fraseFalso,
+  rotuloTipoCondicao,
   aceitaExact,
   normalizaTexto
 } from './condition.js'
@@ -428,5 +429,27 @@ describe('operadores novos de 31/07', () => {
     const c = { subject: 'field', field: 'x', field_type: 'text', op: 'is_empty' }
     expect(operadorSpec(c).aridade).toBe(0)
     expect(condicaoIncompleta(c)).toBe(false)
+  })
+})
+
+describe("subtitulo do card mostra a logica escolhida", () => {
+  it("ALL vira E, ANY vira Ou — e o modo aparece no subtitulo", () => {
+    expect(rotuloTipoCondicao("Condicao", "ALL")).toBe("Condicao \"E\"")
+    expect(rotuloTipoCondicao("Condicao", "ANY")).toBe("Condicao \"Ou\"")
+  })
+
+  it("modo ausente ou invalido cai em E, como o resto do modulo", () => {
+    expect(rotuloTipoCondicao("Condicao", undefined)).toBe("Condicao \"E\"")
+    expect(rotuloTipoCondicao("Condicao", "XPTO")).toBe("Condicao \"E\"")
+  })
+
+  it("sem label o subtitulo ainda diz o que o bloco e", () => {
+    expect(rotuloTipoCondicao("", "ANY")).toBe("Condição \"Ou\"")
+  })
+
+  it("usa a MESMA fonte do painel — nao redigita E/Ou", () => {
+    for (const m of ["ALL", "ANY"]) {
+      expect(rotuloTipoCondicao("X", m)).toContain(rotuloLogica(m))
+    }
   })
 })

@@ -405,6 +405,20 @@ export function rotuloLogica(mode) {
 }
 
 /**
+ * Subtítulo do card no canvas: o tipo do bloco MAIS a lógica escolhida.
+ *
+ * ⚠️ Sem isto, dois blocos com as mesmas três condições e modos opostos ficam
+ * idênticos no canvas — as linhas listadas são as mesmas, e a diferença mora nos
+ * rótulos das saídas, que a pessoa só lê quando já está procurando. O `E`/`Ou` no
+ * subtítulo põe a informação onde o olho passa primeiro. (Evandro, 01/08.)
+ *
+ * DERIVADO, como o `rotuloLogica`: nunca gravado no grafo.
+ */
+export function rotuloTipoCondicao(label, mode) {
+  return `${label || 'Condição'} "${rotuloLogica(mode)}"`
+}
+
+/**
  * As frases das duas saídas.
  *
  * ⚠️ "Verdadeiro/Falso" é vocabulário de RUNTIME e não pode vazar para a tela de

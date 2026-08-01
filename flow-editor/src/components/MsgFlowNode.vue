@@ -4,7 +4,9 @@ import { Handle, Position } from '@vue-flow/core'
 import { handleIdFor } from '../core/graph.js'
 import { linhasDoBloco, linhasDaCondicao } from '../core/preview.js'
 import { subTypesFrom } from '../core/subblocks.js'
-import { normalizeParameters, sujeitosDoCampo, fraseVerdadeiro, fraseFalso } from '../core/condition.js'
+import {
+  normalizeParameters, sujeitosDoCampo, fraseVerdadeiro, fraseFalso, rotuloTipoCondicao
+} from '../core/condition.js'
 import { problemasDoBloco, textoDosProblemas } from '../core/problemas.js'
 
 const props = defineProps({
@@ -78,6 +80,13 @@ const linhas = computed(() => {
 // saída, logo abaixo da lista. Dizer duas vezes a mesma coisa no mesmo card só
 // fazia o bloco crescer.
 
+/** Linha abaixo do nome: o tipo do bloco, e na Condição também a lógica E/Ou. */
+const subtitulo = computed(() => {
+  const label = spec.value.label || props.data.nodeType
+  if (props.data.nodeType !== 'eciaa.condition') return label
+  return rotuloTipoCondicao(label, normalizeParameters(props.data.parameters || {}).mode)
+})
+
 /**
  * ✗ vermelho de pendência — AVISO, nunca bloqueio (Evandro, 01/08).
  * A regra de o que falta é genérica e mora em core/problemas.js, para valer em
@@ -116,7 +125,7 @@ const problemas = computed(() =>
       <span class="mf-node__icon">{{ spec.icon || '⬜' }}</span>
       <div style="min-width:0; flex:1">
         <div class="mf-node__name">{{ data.name }}</div>
-        <div class="mf-node__type">{{ spec.label || data.nodeType }}</div>
+        <div class="mf-node__type">{{ subtitulo }}</div>
       </div>
     </div>
 
