@@ -1,0 +1,8 @@
+# Redirects do Cloudflare Pages (ignorado pelo GitHub Pages).
+#
+# /flow-editor/ servia o entry de DEV do Vite (que aponta para /src/main.js e
+# portanto está quebrado em produção). O entry real é /flow-editor/dist/.
+# O entry de dev não vai mais ao ar; esta linha faz a URL antiga continuar
+# levando ao app em vez de cair no 404.
+/flow-editor /flow-editor/dist/ 302
+/flow-editor/ /flow-editor/dist/ 302

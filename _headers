@@ -1,0 +1,31 @@
+# Cabeçalhos do Cloudflare Pages (ignorado pelo GitHub Pages).
+#
+# Por que este arquivo existe: o GitHub Pages mandava
+# `Strict-Transport-Security: max-age=31556952` de graça. No Pages isso não vem
+# por padrão — sem replicar aqui, a migração seria uma REGRESSÃO de segurança.
+
+/*
+  Strict-Transport-Security: max-age=31556952
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# DELIBERADAMENTE AUSENTES: X-Frame-Options e CSP frame-ancestors.
+# O /flow-editor/ é consumido dentro de um iframe pelo ECiaA Hub — travar
+# enquadramento aqui quebraria o mini-app em silêncio.
+
+# Bundle do flow-editor: nome com hash (app.<hash>.js) => imutável.
+/flow-editor/dist/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Imagens: mudam pouco e não têm hash no nome => 7 dias.
+/blog/posts/img/*
+  Cache-Control: public, max-age=604800
+
+/og-image.png
+  Cache-Control: public, max-age=604800
+
+/logo.png
+  Cache-Control: public, max-age=604800
+
+# NÃO cachear longo /styles.css nem /consent.js: são nomes fixos e mudam a cada
+# ajuste de design/LGPD. Ficam no default curto do Pages, como no GitHub Pages.
