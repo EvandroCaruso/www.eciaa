@@ -1,0 +1,8 @@
+# Saída do build — montada por scripts/build-site.mjs, nunca versionada.
+# (o Cloudflare Pages roda o build e publica o dist/ gerado por ele)
+dist/
+
+node_modules/
+
+# cache local do wrangler (deploy para o Cloudflare Pages)
+.wrangler/

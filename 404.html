@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Página não encontrada — ECIAA</title>
+  <meta name="description" content="A página que você procura não existe ou foi movida." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="preconnect" href="https://api.fontshare.com" />
+  <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <!-- Analytics com consentimento (LGPD) — o GA só carrega após o "Aceitar" -->
+  <script defer src="/consent.js"></script>
+</head>
+<body>
+  <!-- NAV -->
+  <header class="nav">
+    <a href="/" class="logo">EC<span>IA</span>A</a>
+    <button class="nav-toggle" id="navToggle" aria-label="Abrir menu" aria-expanded="false"><span></span></button>
+    <nav class="nav-links" id="navLinks">
+      <a href="/#sobre">Sobre</a>
+      <a href="/#servicos">Serviços</a>
+      <a href="/#portfolio">Cases</a>
+      <a href="/blog/">Blog</a>
+      <a href="/#contato" class="btn btn-primary btn-sm">Falar com a gente</a>
+    </nav>
+  </header>
+
+  <main class="legal">
+    <span class="eyebrow">Erro 404</span>
+    <h1>Esta página <span class="grad-text">não existe</span></h1>
+    <div class="updated">O endereço pode ter mudado, ou o link que te trouxe até aqui está desatualizado.</div>
+
+    <p>Nada foi perdido — é só escolher por onde continuar:</p>
+    <ul>
+      <li><a href="/">Página inicial</a> — o ecossistema de apps com IA da ECIAA.</li>
+      <li><a href="/blog/">Blog</a> — matérias sobre IA no atendimento, WhatsApp e integração de ERP.</li>
+      <li><a href="/#contato">Falar com a gente</a> — se você procurava algo específico, a gente acha por você.</li>
+    </ul>
+
+    <p style="margin-top:2.5rem;">
+      <a href="/" class="btn btn-primary btn-sm">Voltar para o início</a>
+    </p>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-top">
+      <div class="footer-cta">
+        <div class="logo" style="font-size:1.4rem;margin-bottom:1rem;">EC<span>IA</span>A</div>
+        <h3>Pronto para transformar sua operação?</h3>
+        <p>Ecossistemas de IA que capturam demanda 24/7 e viram vantagem competitiva.</p>
+        <a href="/#contato" class="btn btn-primary btn-sm">Falar com especialista</a>
+      </div>
+      <div class="footer-links">
+        <a href="/">Início</a>
+        <a href="/blog/">Blog</a>
+        <a href="/politica-exclusao-dados">Exclusão de dados</a>
+        <a href="/termos-de-servico">Termos de serviço</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 ECIAA · eciaa.com.br · Todos os direitos reservados</div>
+    </div>
+  </footer>
+
+  <script>
+    const toggle = document.getElementById('navToggle');
+    const links = document.getElementById('navLinks');
+    toggle.addEventListener('click', () => {
+      const open = links.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  </script>
+</body>
+</html>
