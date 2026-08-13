@@ -3,3 +3,6 @@
 dist/
 
 node_modules/
+
+# cache local do wrangler (deploy para o Cloudflare Pages)
+.wrangler/

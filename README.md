@@ -126,11 +126,24 @@ Estado da migração:
 | URLs sem extensão (81 URLs: canonical, OG, JSON-LD, sitemap, links) | ✅ feito |
 | `404.html`, `_headers` (HSTS), `_redirects` (`/flow-editor/`) | ✅ feito |
 | Build limpo (`dist/` só com o que é público) | ✅ feito |
-| Conectar o repo no Cloudflare Pages (build `node scripts/build-site.mjs`, output `dist`) | ⏳ OAuth de dashboard |
-| Domínio `www.eciaa.com.br` no projeto + CNAME | ⏳ precisa token com `Zone > DNS: Edit` |
+| Projeto `eciaa-site` no ar em **eciaa-site.pages.dev**, validado | ✅ feito |
+| Domínio anexado ao projeto | ⚠️ `pending` — falta o DNS |
+| **Trocar o CNAME do `www`** → `eciaa-site.pages.dev`, proxy ligado | ⛔ **é o cutover** |
 | Desligar o GitHub Pages | ⏳ depois do cutover |
 
-**Rollback:** apontar o CNAME de volta para `evandrocaruso.github.io` e reativar o GitHub Pages.
+**Modelo de deploy: Direct Upload (`wrangler`), não integração Git.** Logo:
+
+```bash
+node scripts/build-site.mjs
+npx wrangler pages deploy dist --project-name=eciaa-site --branch=main
+```
+
+⚠️ **`git push` NÃO publica no Cloudflare.** Enquanto o CNAME não mudar, o push ainda publica no
+GitHub Pages (que é quem responde no `www`); depois do cutover, publicar é só pelo `wrangler`.
+Precisa de `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` no ambiente.
+
+**Rollback:** o CNAME atual **já é** o rollback — enquanto ele apontar para `evandrocaruso.github.io`,
+quem responde no `www` é o GitHub Pages.
 
 > ⚠️ O GitHub Pages publica a **raiz do repo**; o Cloudflare Pages publica **`dist/`**. Enquanto
 > os dois estiverem ligados, o `dist/` é o que vale no Cloudflare e a raiz é o que vale no GitHub
