@@ -132,16 +132,21 @@ Estado:
 **Migração concluída.** O `CNAME` e o `.nojekyll` ficam no repo, inertes: só o GitHub Pages os usa,
 e são o que torna o rollback trivial.
 
-**Modelo de deploy: Direct Upload (`wrangler`), não integração Git.** Logo:
+**Publicar = `git push` na `main`.** O GitHub Actions (`.github/workflows/deploy.yml`) roda
+`build-site` → `check-links` → `wrangler pages deploy`, em ~25 s.
+
+🚪 **`check-links` é portão:** link interno que não resolve **reprova o deploy**. Se o Actions
+falhar, a produção fica no deploy anterior — não quebra.
+
+⚠️ **Não deployar à mão no dia a dia** — dois publicadores fazem o repo e a produção divergirem em
+silêncio. O comando manual existe só para emergência ou preview:
 
 ```bash
 node scripts/build-site.mjs
 npx wrangler pages deploy dist --project-name=eciaa-site --branch=main
 ```
 
-⚠️ **`git push` NÃO publica no Cloudflare.** Enquanto o CNAME não mudar, o push ainda publica no
-GitHub Pages (que é quem responde no `www`); depois do cutover, publicar é só pelo `wrangler`.
-Precisa de `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` no ambiente.
+Credencial: secret `CLOUDFLARE_API_TOKEN` no repo, escopo único `Pages Write`.
 
 **Rollback:** o CNAME atual **já é** o rollback — enquanto ele apontar para `evandrocaruso.github.io`,
 quem responde no `www` é o GitHub Pages.
