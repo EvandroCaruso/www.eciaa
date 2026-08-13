@@ -126,8 +126,11 @@ Estado:
 | Build limpo (`dist/` só com o que é público) | ✅ |
 | Projeto `eciaa-site`, validado | ✅ |
 | **Cutover: `www` → `eciaa-site.pages.dev` proxiado** | ✅ **13/08/2026** |
-| Apex `eciaa.com.br` → 301 para o `www` | ⏳ falta a Redirect Rule |
-| Desligar o GitHub Pages | ⏳ ainda ligado em `evandrocaruso.github.io` |
+| Apex `eciaa.com.br` → 301 para o `www` | ✅ **13/08/2026** (ver `apex-redirect/`) |
+| Desligar o GitHub Pages | ✅ **13/08/2026** — `Settings → Pages → Branch: None` |
+
+**Migração concluída.** O `CNAME` e o `.nojekyll` ficam no repo, inertes: só o GitHub Pages os usa,
+e são o que torna o rollback trivial.
 
 **Modelo de deploy: Direct Upload (`wrangler`), não integração Git.** Logo:
 
