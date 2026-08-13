@@ -1,0 +1,50 @@
+name: Publica no Cloudflare Pages
+
+# Por que existe: o site é servido pelo Cloudflare Pages por Direct Upload, e o
+# `git push` sozinho NÃO publica. Sem este workflow ficam dois alvos (versionar
+# e publicar) e é questão de tempo até alguém commitar sem deployar — o GitHub
+# dizendo uma coisa e a produção mostrando outra, em silêncio.
+#
+# Com ele, "push na main = publicado", e o `check-links` vira portão: link
+# interno quebrado reprova o deploy em vez de ir ao ar.
+#
+# Detalhe e rollback: 07-Configuracoes/cloudflare/pages.md no vault.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # permite publicar à mão pela aba Actions
+
+concurrency:
+  group: deploy-cloudflare-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # Monta dist/ pela allowlist de scripts/build-site.mjs.
+      # Arquivo novo que não estiver na allowlist NÃO vai ao ar — é de propósito:
+      # foi assim que o código-fonte do flow-editor parou de vazar em produção.
+      - name: Monta dist/
+        run: node scripts/build-site.mjs
+
+      # Portão: falha se algum link interno não resolver.
+      - name: Verifica links internos
+        run: node scripts/check-links.mjs
+
+      - name: Publica
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # Account ID não é segredo; fica visível de propósito, para o workflow
+          # ser legível sem abrir a config de secrets.
+          CLOUDFLARE_ACCOUNT_ID: 969048d86a8951021ae824512700f5d9
+        run: npx --yes wrangler@4 pages deploy dist --project-name=eciaa-site --branch=main
