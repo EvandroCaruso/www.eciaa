@@ -1,6 +1,6 @@
 # ECIAA — Site Institucional
 
-Site institucional estático da **ECIAA** (HTML/CSS/JS vanilla). Hospedado no **GitHub Pages**, **em migração para o Cloudflare Pages** (ver "Hospedagem" no fim).
+Site institucional estático da **ECIAA** (HTML/CSS/JS vanilla). Hospedado no **Cloudflare Pages** desde 13/08/2026 (ver "Hospedagem" no fim). **`git push` não publica** — quem publica é o `wrangler`.
 
 🌐 **Site ao vivo:** https://www.eciaa.com.br
 
@@ -109,27 +109,25 @@ Redesign inteiro referenciando o **make.com**: base **clara**, colorida, arredon
 
 ## 🚀 Hospedagem
 
-**Hoje (no ar):** GitHub Pages · repo **privado** `EvandroCaruso/www.eciaa` · branch `main` ·
-**raiz do repo** · `CNAME = www.eciaa.com.br`. Deploy = `git push`. O DNS já é Cloudflare
-(nameservers `april`/`simon.ns.cloudflare.com`), mas o `www` está em **nuvem cinza** — o tráfego
-vai direto ao GitHub/Fastly, sem passar pela Cloudflare.
+**No ar:** **Cloudflare Pages**, projeto `eciaa-site` · repo **privado**
+`EvandroCaruso/www.eciaa` · `www` é CNAME **proxiado** para `eciaa-site.pages.dev`.
 
-**Em migração para o Cloudflare Pages.** Motivo: Pages a partir de repo **privado** exige plano
-pago no GitHub (Pro/Team, US$ 4/mês); no Cloudflare Pages é grátis, sem limite de banda (o
-GitHub tem soft limit de 100 GB/mês), e sai da zona cinzenta dos Termos Adicionais do GitHub,
-que vedam usar Pages como hospedagem gratuita de negócio online.
+**Por que saiu do GitHub Pages:** Pages a partir de repo **privado** exige plano pago no GitHub
+(Pro/Team, US$ 4/mês); no Cloudflare Pages é grátis, sem limite de banda (o GitHub tem soft limit
+de 100 GB/mês), e sai da zona cinzenta dos Termos Adicionais do GitHub, que vedam usar Pages como
+hospedagem gratuita de negócio online.
 
-Estado da migração:
+Estado:
 
 | Etapa | Estado |
 |---|---|
-| URLs sem extensão (81 URLs: canonical, OG, JSON-LD, sitemap, links) | ✅ feito |
-| `404.html`, `_headers` (HSTS), `_redirects` (`/flow-editor/`) | ✅ feito |
-| Build limpo (`dist/` só com o que é público) | ✅ feito |
-| Projeto `eciaa-site` no ar em **eciaa-site.pages.dev**, validado | ✅ feito |
-| Domínio anexado ao projeto | ⚠️ `pending` — falta o DNS |
-| **Trocar o CNAME do `www`** → `eciaa-site.pages.dev`, proxy ligado | ⛔ **é o cutover** |
-| Desligar o GitHub Pages | ⏳ depois do cutover |
+| URLs sem extensão (81 URLs: canonical, OG, JSON-LD, sitemap, links) | ✅ |
+| `404.html`, `_headers` (HSTS), `_redirects` (`/flow-editor/`) | ✅ |
+| Build limpo (`dist/` só com o que é público) | ✅ |
+| Projeto `eciaa-site`, validado | ✅ |
+| **Cutover: `www` → `eciaa-site.pages.dev` proxiado** | ✅ **13/08/2026** |
+| Apex `eciaa.com.br` → 301 para o `www` | ⏳ falta a Redirect Rule |
+| Desligar o GitHub Pages | ⏳ ainda ligado em `evandrocaruso.github.io` |
 
 **Modelo de deploy: Direct Upload (`wrangler`), não integração Git.** Logo:
 
