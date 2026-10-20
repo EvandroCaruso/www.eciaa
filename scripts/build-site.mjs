@@ -26,7 +26,8 @@ const INCLUDE = [
   '404.html',
   'politica-exclusao-dados.html',
   'termos-de-servico.html',
-  // páginas do app OAuth pessoal (exigidas pela verificação do Google; fora do menu e do sitemap)
+  // PROTEGIDO — home + privacidade do app OAuth claude-pessoal (Google). NUNCA remover nem renomear:
+  // ver README "Páginas que não podem sair do ar". Fora do menu e do sitemap de propósito.
   'claude-pessoal',
   // design system + scripts de página
   'styles.css',

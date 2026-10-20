@@ -11,6 +11,33 @@ Site institucional estático da **ECIAA** (HTML/CSS/JS vanilla). Hospedado no **
 
 > ⚠️ **Domínio:** o site é servido em **`www.eciaa.com.br`** (o `CNAME` aponta pra cá). O **apex `eciaa.com.br` (sem www) é OUTRO site — um WordPress** — e dá 404 nas páginas do blog. **Todo `canonical`/OG/sitemap usa `https://www.eciaa.com.br/...`.** Nunca use o apex nos links de SEO.
 
+> 🔒 **Páginas que não podem sair do ar — regra permanente (2026-10-20).** Leia antes de publicar.
+>
+> - https://www.eciaa.com.br/claude-pessoal/  (home do app)
+> - https://www.eciaa.com.br/claude-pessoal/privacidade  (Política de Privacidade)
+>
+> **Por quê:** são a home e a Política de Privacidade obrigatórias do app OAuth do Google que o
+> Evandro usa para ler e-mail e agenda. O Google só mantém o app **"Em produção"** com esses dois
+> links cadastrados; se quebrarem, o app pode voltar ao modo **Teste** e o acesso ao e-mail passa a
+> **vencer a cada 7 dias**.
+>
+> **Pode mudar:** visual, menu, rodapé e estilo — desde que as duas URLs continuem abrindo
+> publicamente (HTTP 200, sem login).
+>
+> **Não pode mudar, nem em redesign, migração ou reorganização:**
+> - **Endereço:** o caminho exato das duas URLs (não apagar, não renomear, não tirar da allowlist do `build-site`).
+> - **Acesso:** nada de senha/login nem `noindex` que bloqueie o acesso.
+> - **Texto:** a política continua dizendo que dados de e-mail e agenda servem só para organização
+>   pessoal, ficam no computador do titular, não são compartilhados, e que o uso segue a Política
+>   de Dados do Usuário dos Serviços de API do Google.
+>
+> **Se for inevitável mudar o endereço** (troca de plataforma ou domínio): **avisar o Evandro antes
+> de publicar** — ele atualiza os links no Google Cloud (Google Auth Platform → Branding) no mesmo
+> dia — e manter um **301 da URL antiga para a nova** em `_redirects`.
+>
+> **Trava automática:** `scripts/check-links.mjs` reprova o deploy se as páginas sumirem, ganharem
+> `noindex` ou perderem os trechos obrigatórios. Não afrouxe a trava para "fazer passar".
+
 > 📚 **Documentação completa** (fonte de verdade) vive no vault Obsidian, não aqui:
 > `05-Projetos/site-institucional-eciaa/` (README, estrutura-tecnica, como-publicar, evolucao),
 > `07-Configuracoes/github/github-pages.md` (hospedagem atual + DNS real da zona) e

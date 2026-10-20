@@ -104,3 +104,41 @@ if (broken.length) {
   process.exit(1);
 }
 console.log('✔ todo link interno resolve');
+
+/**
+ * PÁGINAS PROTEGIDAS — regra permanente (2026-10-20), ver README "Páginas que não podem sair do ar".
+ * Home e Política de Privacidade do app OAuth `claude-pessoal` (Google). Se quebrarem, o Google pode
+ * devolver o app ao modo Teste e o acesso ao e-mail passa a vencer a cada 7 dias.
+ * Endereço, acesso público e o miolo do texto não podem mudar. Mudar endereço = avisar o Evandro ANTES
+ * (ele atualiza o Google Auth Platform → Branding no mesmo dia) + 301 da URL antiga.
+ */
+const PROTECTED = [
+  { url: '/claude-pessoal/', file: 'claude-pessoal/index.html', must: ['/claude-pessoal/privacidade'] },
+  {
+    url: '/claude-pessoal/privacidade',
+    file: 'claude-pessoal/privacidade.html',
+    must: [
+      'organização pessoal',
+      'no computador do titular',
+      'não são enviados a terceiros',
+      'Política de Dados do Usuário dos Serviços de API do Google',
+    ],
+  },
+];
+const protErr = [];
+for (const p of PROTECTED) {
+  const full = path.join(DIST, p.file);
+  if (!isFile(full)) {
+    protErr.push(`${p.url} sumiu do dist/ (esperado ${p.file})`);
+    continue;
+  }
+  const html = await readFile(full, 'utf8');
+  if (/<meta[^>]+noindex/i.test(html)) protErr.push(`${p.url} ganhou noindex`);
+  for (const s of p.must) if (!html.includes(s)) protErr.push(`${p.url} perdeu o trecho obrigatório: "${s}"`);
+}
+if (protErr.length) {
+  console.error(`\n✖ página protegida violada (app OAuth do Google — ver README):`);
+  for (const e of protErr) console.error(`  ${e}`);
+  process.exit(1);
+}
+console.log('✔ páginas protegidas do claude-pessoal intactas');
