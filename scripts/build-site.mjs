@@ -26,6 +26,8 @@ const INCLUDE = [
   '404.html',
   'politica-exclusao-dados.html',
   'termos-de-servico.html',
+  // páginas do app OAuth pessoal (exigidas pela verificação do Google; fora do menu e do sitemap)
+  'claude-pessoal',
   // design system + scripts de página
   'styles.css',
   'consent.js',
